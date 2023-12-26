@@ -54,9 +54,6 @@ cd ~/openairinterface5g/cmake_targets
 sudo apt install -y libforms-dev libforms-bin
 
 # Build OAI gNB
-cd ~/openairinterface5g
-source oaienv
-cd cmake_targets
 ./build_oai -w SIMU --ninja --nrUE --gNB --build-lib "nrscope telnetsrv" -C
 ```
 
@@ -74,27 +71,17 @@ docker compose up -d
 
 ### RFsimulator
 
-<<<<<<< HEAD
+Channel models in the context of wireless communication refer to mathematical models that simulate the effects of transmission mediums on signal propagation. These models account for factors such as attenuation, interference, and fading, which can affect the quality of communication between transmitter and receiver. Different channel models represent different real-world scenarios, such as urban environments, indoor spaces, or rural areas. By using these models, researchers and engineers can predict and evaluate the performance of wireless systems under various conditions. Here a simple scenario based on the noise of the chanel is described. The following steps are descreibed below. 
+
 - For the gNB configuration file, follow the link to the configuration files: [Configurations](../ci-scripts/conf_files/gnb.sa.band78.106prb.rfsim.conf)
 
 - Add this line to the bottom of the conf file for including the channel models in your simulations. 
-=======
-- For the gNB configuration file, follow the path to openairinterface5g/targets/PROJECTS/GENERIC-NR-5GC/CONF and edit the gnb.sa.band78.106prb.rfsim.conf as:
-```bash
-min_rxtxtime                                              = 6;
-```
-and add this line to the bottom of your conf file. 
->>>>>>> 1efeb08c13bdba72880502499ac3d2a4c5ce54a7
 
 ```bash
 @include "channelmod_rfsimu.conf"
 ```
 
-<<<<<<< HEAD
 You can check the example run 2(RFSIMULATOR) in the Launch gNB in one window part in this link: [RFSIMULATOR Tutorial](../radio/rfsimulator/README.md)
-=======
-- You can check the example run 2 in the gNB part in this link:(../radio/rfsimulator/README.md)
->>>>>>> 1efeb08c13bdba72880502499ac3d2a4c5ce54a7
 
 
 - For the channel model configuration, follow the link to the configurtion files:  [Configurations](../ci-scripts/conf_files/channelmod_rfsimu.conf) 
@@ -114,33 +101,21 @@ and the rest of the channelmod_rfsimu.conf remains unchanged.
 
 # 5. OAI  UE 
 
-<<<<<<< HEAD
 For the UE configuration file, follow the link to the configuration files: [Configurations](../ci-scripts/conf_files/ue.sa.conf)
 
 - Edit the IMSI as the following
 ```bash
 imsi="0010100000001";
 ```
-- - Add this line to the bottom of the conf file for including the channel models in your simulations. 
-=======
-- For the UE configuration file, follow the path to openairinterface5g/targets/PROJECTS/GENERIC-NR-5GC/CONF and edit the ue.conf as:
-```bash
-imsi="0010100000001";
-```
-and add this line to the bottom of your conf file. 
->>>>>>> 1efeb08c13bdba72880502499ac3d2a4c5ce54a7
+- Add this line to the bottom of the conf file for including the channel models in your simulations. 
+
 
 ```bash
 @include "channelmod_rfsimu.conf"
 ```
-<<<<<<< HEAD
+
 You can check the example run 1(RFSIMULATOR) in the Launch UE in another window part in this link: [RFSIMULATOR Tutorial](../radio/rfsimulator/README.md)
-=======
 
-- You can check the example run 2 in the UE part in this link:(../radio/rfsimulator/README.md)
-
-
->>>>>>> 1efeb08c13bdba72880502499ac3d2a4c5ce54a7
 # 5.2 OAI multiple UE 
 
 
@@ -195,3 +170,7 @@ telnet 10.201.1.1 9095 ### For accessing to the first UE
 telnet 10.202.1.2 9096 ### For accessing to the second UE
 ```
 After entering to the bash environment you can type help and see the possible options to change the channelmodels and other available options in RFSIM. 
+
+### 5.4 Monitoring by nr-scope 
+
+In order to verify the effects of the changes, the nr-scope constellation tool can be used to track and analyze the modulation constellation points. This tool allows users to visualize the modulation scheme being used and assess the quality of the received signals. By observing the constellation points, users can verify whether the changes made to the system configuration have resulted in.
