@@ -121,7 +121,7 @@ struct test_op_params {
   uint16_t num_lcores;
   int vector_mask;
   rte_atomic16_t sync;
-  struct test_buffers q_bufs[RTE_MAX_NUMA_NODES][32];
+  struct test_buffers q_bufs[RTE_MAX_NUMA_NODES][MAX_QUEUES];
 };
 
 /* Contains per lcore params */
@@ -556,8 +556,8 @@ set_ldpc_dec_op(struct rte_bbdev_dec_op **ops, unsigned int n,
     }
     //LOG_W(PHY,"ULSCH %02d HARQPID %02d R %02d COMBIN %d RV %d NCB %05d NUM OPS %d E %05d\n", ulsch_id, harq_pid, r, p_offloadParams->setCombIn, p_offloadParams->rv, p_offloadParams->n_cb, n, p_offloadParams->E_cb[i]);
     ops[i]->ldpc_dec.code_block_mode = 1; // ldpc_dec->code_block_mode;
-    ops[i]->ldpc_dec.harq_combined_input.offset = ulsch_id * 64 * LDPC_MAX_CB_SIZE + i * LDPC_MAX_CB_SIZE;
-    ops[i]->ldpc_dec.harq_combined_output.offset = ulsch_id * 64 * LDPC_MAX_CB_SIZE + i * LDPC_MAX_CB_SIZE;
+    ops[i]->ldpc_dec.harq_combined_input.offset = ulsch_id * LDPC_MAX_NUM_CB * LDPC_MAX_CB_SIZE + i * LDPC_MAX_CB_SIZE;
+    ops[i]->ldpc_dec.harq_combined_output.offset = ulsch_id * LDPC_MAX_NUM_CB * LDPC_MAX_CB_SIZE + i * LDPC_MAX_CB_SIZE;
     if (bufs->hard_outputs != NULL)
       ops[i]->ldpc_dec.hard_output = bufs->hard_outputs[start_idx + i];
     if (bufs->inputs != NULL)
