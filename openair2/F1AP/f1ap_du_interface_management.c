@@ -38,6 +38,9 @@
 #include "assertions.h"
 
 #include "GNB_APP/gnb_paramdef.h"
+#include "openair2/LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
+#include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
+#include "openair3/ocp-gtpu/gtp_itf.h"
 
 int to_NRNRB(int nrb) {
   for (int i=0; i<sizeofArray(nrb_lut); i++)
@@ -52,7 +55,49 @@ int to_NRNRB(int nrb) {
 
 int DU_handle_RESET(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
 {
-  AssertFatal(1==0,"Not implemented yet\n");
+  // LOG_D(F1AP, "DU_handle_RESET\n");
+  // F1AP_Reset_t  *container;
+  // F1AP_ResetIEs_t *ie;
+  // int i = 0;
+  // DevAssert(pdu != NULL);
+  // container = &pdu->choice.initiatingMessage->value.choice.Reset;
+
+  // MessageDef *msg_p = itti_alloc_new_message(TASK_DU_F1, 0, F1AP_RESET);
+  // msg_p->ittiMsgHeader.originInstance = assoc_id;
+  // f1ap_reset_t *f1ap_reset = &F1AP_RESET(msg_p);
+
+  // /* Transaction ID */
+  // F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_ResetIEs_t, ie, container, F1AP_ProtocolIE_ID_id_TransactionID, true);
+  // f1ap_reset->transaction_id = ie->value.choice.TransactionID;
+  
+  // /* Cause */
+  // F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_ResetIEs_t, ie, container, F1AP_ProtocolIE_ID_id_Cause, true);
+  // AssertFatal(1==0,"Not implemented yet\n");
+
+  gNB_MAC_INST *mac = RC.nrmac[0];
+
+  LOG_D(F1AP, "acquiring lock\n");
+  NR_SCHED_LOCK(&mac->sched_lock);
+  LOG_D(F1AP, "lock acquired\n");
+
+  NR_UE_info_t **UE_list = (&mac->UE_info)->list;
+  NR_UE_info_t *UE = *UE_list;
+  while (UE != NULL) {
+    nr_mac_release_ue(mac, UE->rnti);
+    UE_list = (&mac->UE_info)->list;
+    UE = *UE_list;
+  }
+
+  // UE_iterator((&mac->UE_info)->list, UE) {
+  //   nr_mac_release_ue(mac, UE->rnti);
+  //   // newGtpuDeleteAllTunnels(0, UE->rnti);
+  // }
+
+  LOG_D(F1AP, "releasing lock\n");
+  NR_SCHED_UNLOCK(&mac->sched_lock);
+  LOG_D(F1AP, "lock released\n");
+
+  return 0;
 }
 
 int DU_send_RESET_ACKKNOWLEDGE(sctp_assoc_t assoc_id, F1AP_ResetAcknowledge_t *ResetAcknowledge) {

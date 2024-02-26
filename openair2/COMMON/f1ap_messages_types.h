@@ -34,6 +34,8 @@
 
 #define F1AP_DU_REGISTER_REQ(mSGpTR)               (mSGpTR)->ittiMsg.f1ap_du_register_req
 
+#define F1AP_RESET(mSGpTR)                         (mSGpTR)->ittiMsg.f1ap_reset
+
 #define F1AP_SETUP_REQ(mSGpTR)                     (mSGpTR)->ittiMsg.f1ap_setup_req
 #define F1AP_SETUP_RESP(mSGpTR)                    (mSGpTR)->ittiMsg.f1ap_setup_resp
 #define F1AP_GNB_CU_CONFIGURATION_UPDATE(mSGpTR)   (mSGpTR)->ittiMsg.f1ap_gnb_cu_configuration_update
@@ -477,5 +479,14 @@ typedef struct f1ap_paging_ind_s {
 typedef struct f1ap_lost_connection_t {
   int dummy;
 } f1ap_lost_connection_t;
+
+typedef struct f1ap_reset_t {
+  /// ulong transaction id
+  uint64_t transaction_id;
+  f1ap_Cause_t cause;
+  long cause_value;
+
+  // TODO
+} f1ap_reset_t;
 
 #endif /* F1AP_MESSAGES_TYPES_H_ */
