@@ -83,7 +83,7 @@ int DU_handle_RESET(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream,
   NR_UE_info_t **UE_list = (&mac->UE_info)->list;
   NR_UE_info_t *UE = *UE_list;
   while (UE != NULL) {
-    nr_mac_release_ue(mac, UE->rnti);
+    nr_mac_release_ue_f1ap_reset(mac, UE->rnti);
     UE_list = (&mac->UE_info)->list;
     UE = *UE_list;
   }
