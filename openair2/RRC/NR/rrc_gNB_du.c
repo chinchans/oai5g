@@ -169,7 +169,20 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *req, sctp_assoc_t assoc_id)
       .nr_cellid = cell_info->nr_cellid,
       .nrpci = cell_info->nr_pci,
       .num_SI = 0,
-  };  
+  };
+
+  if (du->mib != NULL && du->sib1 != NULL) {
+    int scs = get_ssb_scs(cell_info);
+    uint32_t ssb_arfcn = get_ssb_arfcn(cell_info, du->mib, du->sib1);
+
+    for (uint8_t nCell = 0; nCell < MAX_NUMBER_OF_NEIGHBOUR_GNBS; nCell++) {
+      nr_neighbour_gnb_configuration_t *neighbourCell = rrc->neighbourConfiguration[nCell];
+      if (neighbourCell != NULL && ssb_arfcn == neighbourCell->absoluteFrequencySSB && scs == neighbourCell->subcarrierSpacing) {
+        LOG_E(NR_RRC, "Intra Frequency Neighbour is found!\n");
+        neighbourCell->isIntraFrequencyNeighbour = true;
+      }
+    }
+  }
 
   f1ap_setup_resp_t resp = {.transaction_id = req->transaction_id,
                             .num_cells_to_activate = 1,
@@ -179,7 +192,6 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *req, sctp_assoc_t assoc_id)
   if (rrc->node_name != NULL)
     resp.gNB_CU_name = strdup(rrc->node_name);
   rrc->mac_rrc.f1_setup_response(assoc_id, &resp);
-
   /*
   MessageDef *msg_p2 = itti_alloc_new_message(TASK_RRC_GNB, 0, F1AP_GNB_CU_CONFIGURATION_UPDATE);
   F1AP_GNB_CU_CONFIGURATION_UPDATE(msg_p2).gNB_CU_name = rrc->node_name;

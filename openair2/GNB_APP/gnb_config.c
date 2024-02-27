@@ -1524,6 +1524,109 @@ static void check_ssb_raster(uint64_t freq, int band, int scs)
                gscn, freq, band);
 }
 
+static void fill_neighbour_cell_configuration(uint8_t gnb_idx, gNB_RRC_INST *rrc)
+{
+  char gnbpath[MAX_OPTNAME_SIZE + 8];
+  sprintf(gnbpath, "%s.[%i]", GNB_CONFIG_STRING_GNB_LIST, gnb_idx);
+
+  paramdef_t NeighbourCellParams[] = GNBNEIGHBOURCELLPARAMS_DESC;
+  paramlist_def_t NeighbourCellParamList = {GNB_CONFIG_STRING_NEIGHBOUR_CELL_LIST, NULL, 0};
+
+  config_getlist(config_get_if(), &NeighbourCellParamList, NeighbourCellParams, sizeofArray(NeighbourCellParams), gnbpath);
+  LOG_D(GNB_APP, "HO LOG: Neighbour Cell ELM NUM: %d\n", NeighbourCellParamList.numelt);
+
+  if (NeighbourCellParamList.numelt < 1)
+    return;
+
+  for (int l = 0; l < NeighbourCellParamList.numelt; ++l) {
+    nr_neighbour_gnb_configuration_t *neighbourCell =
+        (nr_neighbour_gnb_configuration_t *)calloc(1, sizeof(nr_neighbour_gnb_configuration_t));
+    neighbourCell->gNB_ID = *(NeighbourCellParamList.paramarray[l][GNB_CONFIG_N_CELL_GNB_ID_IDX].uptr);
+    neighbourCell->nrcell_id = (uint64_t) * (NeighbourCellParamList.paramarray[l][GNB_CONFIG_N_CELL_NR_CELLID_IDX].u64ptr);
+    neighbourCell->physicalCellId = *NeighbourCellParamList.paramarray[l][GNB_CONFIG_N_CELL_PHYSICAL_ID_IDX].uptr;
+    neighbourCell->subcarrierSpacing = *NeighbourCellParamList.paramarray[l][GNB_CONFIG_N_CELL_SCS_IDX].uptr;
+    neighbourCell->absoluteFrequencySSB = *NeighbourCellParamList.paramarray[l][GNB_CONFIG_N_CELL_ABS_FREQ_SSB_IDX].i64ptr;
+    neighbourCell->tac = *NeighbourCellParamList.paramarray[l][GNB_CONFIG_N_CELL_TAC_IDX].uptr;
+
+    char neighbour_plmn_path[CONFIG_MAXOPTLENGTH];
+    sprintf(neighbour_plmn_path,
+            "%s.%s.[%i].%s",
+            gnbpath,
+            GNB_CONFIG_STRING_NEIGHBOUR_CELL_LIST,
+            l,
+            GNB_CONFIG_STRING_NEIGHBOUR_PLMN);
+
+    paramdef_t NeighbourPlmn[] = GNBPLMNPARAMS_DESC;
+    config_get(config_get_if(), NeighbourPlmn, sizeofArray(NeighbourPlmn), neighbour_plmn_path);
+
+    neighbourCell->plmn.mcc = *NeighbourPlmn[GNB_MOBILE_COUNTRY_CODE_IDX].uptr;
+    neighbourCell->plmn.mnc = *NeighbourPlmn[GNB_MOBILE_NETWORK_CODE_IDX].uptr;
+    neighbourCell->plmn.mnc_digit_length = *NeighbourPlmn[GNB_MNC_DIGIT_LENGTH].uptr;
+
+    rrc->neighbourConfiguration[l] = neighbourCell;
+  }
+}
+
+static void fill_measurement_configuration(uint8_t gnb_idx, gNB_RRC_INST *rrc)
+{
+  char measurement_path[MAX_OPTNAME_SIZE + 8];
+  sprintf(measurement_path, "%s.[%i].%s", GNB_CONFIG_STRING_GNB_LIST, gnb_idx, GNB_CONFIG_STRING_MEASUREMENT_CONFIGURATION);
+
+  // A3 Event Configuration
+  paramlist_def_t A3_EventList = {MEASUREMENT_EVENTS_A3, NULL, 0};
+  paramdef_t A3_EventParams[] = MEASUREMENT_A3_GLOBALPARAMS_DESC;
+  config_getlist(config_get_if(), &A3_EventList, A3_EventParams, sizeofArray(A3_EventParams), measurement_path);
+  LOG_D(GNB_APP, "HO LOG: A3 Configuration Exists: %d\n", A3_EventList.numelt);
+
+  nr_measurement_configuration_t *measurementConfig = &rrc->measurementConfiguration;
+
+  for (int i = 0; i < A3_EventList.numelt; i++) {
+    NR_A3_EVENT_t *a3_event = (NR_A3_EVENT_t *)calloc(1, sizeof(NR_A3_EVENT_t));
+    a3_event->cell_id = *A3_EventList.paramarray[i][MEASUREMENT_EVENTS_CELL_ID_IDX].i64ptr;
+    a3_event->timeToTrigger = *A3_EventList.paramarray[i][MEASUREMENT_EVENTS_TIMETOTRIGGER_IDX].i64ptr;
+    a3_event->a3_offset = *A3_EventList.paramarray[i][MEASUREMENT_EVENTS_OFFSET_IDX].i64ptr;
+    a3_event->hysteresis = *A3_EventList.paramarray[i][MEASUREMENT_EVENTS_HYSTERESIS_IDX].i64ptr;
+
+    measurementConfig->a3_event_list[i] = a3_event;
+  }
+
+  // A2 Event Configuration
+  char a2_path[MAX_OPTNAME_SIZE + 8];
+  sprintf(a2_path,
+          "%s.[%i].%s.%s",
+          GNB_CONFIG_STRING_GNB_LIST,
+          gnb_idx,
+          GNB_CONFIG_STRING_MEASUREMENT_CONFIGURATION,
+          MEASUREMENT_EVENTS_A2);
+  paramdef_t A2_EventParams[] = MEASUREMENT_A2_GLOBALPARAMS_DESC;
+  config_get(config_get_if(), A2_EventParams, sizeofArray(A2_EventParams), a2_path);
+  if (*A2_EventParams[MEASUREMENT_EVENTS_ENABLE_IDX].i64ptr) {
+    NR_A2_EVENT_t *a2_event = (NR_A2_EVENT_t *)calloc(1, sizeof(NR_A2_EVENT_t));
+    a2_event->threshold_RSRP = *A2_EventParams[MEASUREMENT_EVENTS_A2_THRESHOLD_IDX].i64ptr;
+    a2_event->timeToTrigger = *A2_EventParams[MEASUREMENT_EVENTS_TIMETOTRIGGER_IDX].i64ptr;
+
+    measurementConfig->a2_event = a2_event;
+  }
+
+  // Periodical Event Configuration
+  char periodic_event_path[MAX_OPTNAME_SIZE + 8];
+  sprintf(periodic_event_path,
+          "%s.[%i].%s.%s",
+          GNB_CONFIG_STRING_GNB_LIST,
+          gnb_idx,
+          GNB_CONFIG_STRING_MEASUREMENT_CONFIGURATION,
+          MEASUREMENT_EVENTS_PERIODICAL);
+  paramdef_t Periodical_EventParams[] = MEASUREMENT_PERIODICAL_GLOBALPARAMS_DESC;
+  config_get(config_get_if(), Periodical_EventParams, sizeofArray(Periodical_EventParams), periodic_event_path);
+  if (*Periodical_EventParams[MEASUREMENT_EVENTS_ENABLE_IDX].i64ptr) {
+    NR_PER_EVENT_t *periodic_event = (NR_PER_EVENT_t *)calloc(1, sizeof(NR_PER_EVENT_t));
+    periodic_event->includeBeamMeasurements = *Periodical_EventParams[MEASUREMENT_EVENTS_INCLUDE_BEAM_MEAS_IDX].i64ptr;
+    periodic_event->maxReportCells = *Periodical_EventParams[MEASUREMENT_EVENTS_MAX_RS_INDEX_TO_REPORT].i64ptr;
+
+    measurementConfig->per_event = periodic_event;
+  }
+}
+
 void RCconfig_NRRRC(gNB_RRC_INST *rrc)
 {
 
@@ -1613,7 +1716,10 @@ void RCconfig_NRRRC(gNB_RRC_INST *rrc)
         char gnbpath[MAX_OPTNAME_SIZE + 8];
         sprintf(gnbpath,"%s.[%i]",GNB_CONFIG_STRING_GNB_LIST,k);
 
-	
+        fill_neighbour_cell_configuration(k, rrc);
+
+        fill_measurement_configuration(k, rrc);
+
         paramdef_t PLMNParams[] = GNBPLMNPARAMS_DESC;
 
         paramlist_def_t PLMNParamList = {GNB_CONFIG_STRING_PLMN_LIST, NULL, 0};
