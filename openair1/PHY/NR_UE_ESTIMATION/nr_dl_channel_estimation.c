@@ -74,7 +74,7 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
                               uint8_t rsc_id,
                               uint8_t rep_num,
                               PHY_VARS_NR_UE *ue,
-                              UE_nr_rxtx_proc_t *proc,
+                              const UE_nr_rxtx_proc_t *proc,
                               NR_DL_FRAME_PARMS *frame_params,
                               c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
 {
@@ -628,7 +628,7 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
 }
 
 int nr_pbch_dmrs_correlation(PHY_VARS_NR_UE *ue,
-                             UE_nr_rxtx_proc_t *proc,
+                             const UE_nr_rxtx_proc_t *proc,
                              unsigned char symbol,
                              int dmrss,
                              NR_UE_SSB *current_ssb,
@@ -782,7 +782,7 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
                                int estimateSz,
                                struct complex16 dl_ch_estimates[][estimateSz],
                                struct complex16 dl_ch_estimates_time[][ue->frame_parms.ofdm_symbol_size],
-                               UE_nr_rxtx_proc_t *proc,
+                               const UE_nr_rxtx_proc_t *proc,
                                unsigned char symbol,
                                int dmrss,
                                uint8_t ssb_index,
@@ -1054,13 +1054,13 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
 }
 
 void nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
-                                 UE_nr_rxtx_proc_t *proc,
+                                 const UE_nr_rxtx_proc_t *proc,
                                  unsigned char symbol,
                                  fapi_nr_coreset_t *coreset,
                                  uint16_t first_carrier_offset,
                                  uint16_t BWPStart,
                                  int32_t pdcch_est_size,
-                                 int32_t pdcch_dl_ch_estimates[][pdcch_est_size],
+                                 c16_t pdcch_dl_ch_estimates[][pdcch_est_size],
                                  c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
 {
 
@@ -1606,7 +1606,7 @@ void NFAPI_NR_DMRS_TYPE2_average_prb(NR_DL_FRAME_PARMS *frame_parms,
 #endif
 }
 int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
-                                UE_nr_rxtx_proc_t *proc,
+                                const UE_nr_rxtx_proc_t *proc,
                                 unsigned short p,
                                 unsigned char symbol,
                                 unsigned char nscid,
@@ -1777,7 +1777,6 @@ void nr_pdsch_ptrs_processing(PHY_VARS_NR_UE *ue,
   uint16_t *ptrsSymbPos     = NULL;
   uint8_t  *ptrsSymbIdx     = NULL;
   uint8_t  *ptrsReOffset    = NULL;
-  uint8_t  *dmrsConfigType  = NULL;
   uint16_t *nb_rb           = NULL;
   int nscid = 0;
 
@@ -1789,7 +1788,6 @@ void nr_pdsch_ptrs_processing(PHY_VARS_NR_UE *ue,
     K_ptrs          = &dlsch[0].dlsch_config.PTRSFreqDensity;
     dmrsSymbPos     = &dlsch[0].dlsch_config.dlDmrsSymbPos;
     ptrsReOffset    = &dlsch[0].dlsch_config.PTRSReOffset;
-    dmrsConfigType  = &dlsch[0].dlsch_config.dmrsConfigType;
     nb_rb           = &dlsch[0].dlsch_config.number_rbs;
     ptrsSymbPos     = &dlsch[0].ptrs_symbols;
     ptrsSymbIdx     = &dlsch[0].ptrs_symbol_index;
@@ -1803,7 +1801,6 @@ void nr_pdsch_ptrs_processing(PHY_VARS_NR_UE *ue,
     K_ptrs          = &dlsch[1].dlsch_config.PTRSFreqDensity;
     dmrsSymbPos     = &dlsch[1].dlsch_config.dlDmrsSymbPos;
     ptrsReOffset    = &dlsch[1].dlsch_config.PTRSReOffset;
-    dmrsConfigType  = &dlsch[1].dlsch_config.dmrsConfigType;
     nb_rb           = &dlsch[1].dlsch_config.number_rbs;
     ptrsSymbPos     = &dlsch[1].ptrs_symbols;
     ptrsSymbIdx     = &dlsch[1].ptrs_symbol_index;
@@ -1844,7 +1841,9 @@ void nr_pdsch_ptrs_processing(PHY_VARS_NR_UE *ue,
         /*------------------------------------------------------------------------------------------------------- */
         /* 1) Estimate common phase error per PTRS symbol                                                                */
         /*------------------------------------------------------------------------------------------------------- */
-        nr_ptrs_cpe_estimation(*K_ptrs,*ptrsReOffset,*dmrsConfigType,*nb_rb,
+        nr_ptrs_cpe_estimation(*K_ptrs,
+                               *ptrsReOffset,
+                               *nb_rb,
                                rnti,
                                nr_slot_rx,
                                symbol,

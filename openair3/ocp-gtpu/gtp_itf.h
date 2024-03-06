@@ -4,6 +4,8 @@
 #define GTPNOK -1
 
 # define GTPU_HEADER_OVERHEAD_MAX 64
+
+#include "common/utils/hashtable/hashtable.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -98,6 +100,7 @@ extern "C" {
                                               in_addr_t newOutgoingAddr,
                                               teid_t newOutgoingTeid);
 
+  int newGtpuDeleteOneTunnel(instance_t instance, ue_id_t ue_id, int rb_id);
   int newGtpuDeleteAllTunnels(instance_t instance, ue_id_t ue_id);
   int newGtpuDeleteTunnels(instance_t instance, ue_id_t ue_id, int nbTunnels, pdusessionid_t *pdusession_id);
   instance_t gtpv1Init(openAddr_t context);

@@ -1070,6 +1070,7 @@ int phy_nr_rx_data_indication(nfapi_nr_rx_data_indication_t *ind) {
       rx_ind->pdu_list[j].rnti = ind->pdu_list[j].rnti;
       rx_ind->pdu_list[j].timing_advance = ind->pdu_list[j].timing_advance;
       rx_ind->pdu_list[j].ul_cqi = ind->pdu_list[j].ul_cqi;
+      rx_ind->pdu_list[j].rssi = ind->pdu_list[j].rssi;
     }
     if (!put_queue(&gnb_rx_ind_queue, rx_ind))
     {
@@ -1243,7 +1244,6 @@ int phy_nr_slot_indication(nfapi_nr_slot_indication_scf_t *ind) {
 
 int phy_nr_srs_indication(nfapi_nr_srs_indication_t *ind) {
   struct PHY_VARS_gNB_s *gNB = RC.gNB[0];
-  pthread_mutex_lock(&gNB->UL_INFO_mutex);
 
   gNB->UL_INFO.srs_ind = *ind;
 
@@ -1258,8 +1258,6 @@ int phy_nr_srs_indication(nfapi_nr_srs_indication_t *ind) {
         ind->sfn,ind->slot, ind->number_of_pdus, gNB->UL_INFO.srs_ind.number_of_pdus
         );
   }
-
-  pthread_mutex_unlock(&gNB->UL_INFO_mutex);
 
   return 1;
 }

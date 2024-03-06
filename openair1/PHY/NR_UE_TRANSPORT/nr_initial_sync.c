@@ -19,16 +19,16 @@
  *      contact@openairinterface.org
  */
 
-/*! \file PHY/LTE_TRANSPORT/initial_sync.c
-* \brief Routines for initial UE synchronization procedure (PSS,SSS,PBCH and frame format detection)
-* \author R. Knopp, F. Kaltenberger
-* \date 2011
-* \version 0.1
-* \company Eurecom
-* \email: knopp@eurecom.fr,kaltenberger@eurecom.fr
-* \note
-* \warning
-*/
+/*! \file nr_initial_sync.c
+ * \brief Routines for initial UE synchronization procedure (PSS,SSS,PBCH and frame format detection)
+ * \author R. Knopp, F. Kaltenberger
+ * \date 2011
+ * \version 0.1
+ * \company Eurecom
+ * \email: knopp@eurecom.fr,kaltenberger@eurecom.fr
+ * \note
+ * \warning
+ */
 #include "PHY/types.h"
 #include "PHY/defs_nr_UE.h"
 #include "PHY/MODULATION/modulation_UE.h"
@@ -100,8 +100,10 @@ void free_list(NR_UE_SSB *node) {
   free(node);
 }
 
-
-int nr_pbch_detection(UE_nr_rxtx_proc_t * proc, PHY_VARS_NR_UE *ue, int pbch_initial_symbol, c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
+int nr_pbch_detection(const UE_nr_rxtx_proc_t *proc,
+                      PHY_VARS_NR_UE *ue,
+                      int pbch_initial_symbol,
+                      c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
 {
   NR_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
   int ret =-1;
@@ -196,9 +198,7 @@ int nr_pbch_detection(UE_nr_rxtx_proc_t * proc, PHY_VARS_NR_UE *ue, int pbch_ini
 
 }
 
-int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
-                    PHY_VARS_NR_UE *ue,
-                    int n_frames, int sa)
+int nr_initial_sync(const UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, int n_frames, int sa)
 {
 
   int32_t sync_pos, sync_pos_frame; // k_ssb, N_ssb_crb, sync_pos2,

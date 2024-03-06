@@ -64,23 +64,13 @@
 extern "C" {
 #endif
 
-/** @defgroup _LOG LOG Generator
- * @{*/
-/* @}*/
-
-/** @defgroup _macro Macro Definition
- *  @ingroup _LOG
- *  @brief these macros are used in the code of LOG
- * @{*/
-/* @}*/
-
 /** @defgroup _max_length Maximum Length of LOG
  *  @ingroup _macro
  *  @brief the macros that describe the maximum length of LOG
  * @{*/
 
 #define MAX_LOG_TOTAL 16384 /*!< \brief the maximum length of a log */
-/* @}*/
+/** @}*/
 
 /** @defgroup _log_level Message levels defined by LOG
  *  @ingroup _macro
@@ -95,8 +85,7 @@ extern "C" {
 # define  OAILOG_TRACE    5 /*!< \brief second level debug-level messages, for developers, likely impact real-time behavior*/
 
 #define NUM_LOG_LEVEL 6 /*!< \brief the number of message levels users have with LOG (OAILOG_DISABLE is not available to user as a level, so it is not included)*/
-/* @}*/
-
+/** @}*/
 
 /** @defgroup _log_format Defined log format
  *  @ingroup _macro
@@ -112,15 +101,6 @@ extern "C" {
 #define LOG_BLUE "\033[34m" /*!< \brief VT100 sequence for blue foreground */
 #define LOG_CYBL "\033[40;36m"  /*!< \brief VT100 sequence for cyan foreground on black background */
 #define LOG_RESET "\033[0m" /*!< \brief VT100 sequence for reset (black) foreground */
-/* @}*/
-
-
-/** @defgroup _syslog_conf Macros for write in syslog.conf
- *  @ingroup _macro
- *  @brief Macros used to write lines (local/remote) in syslog.conf
- * @{*/
-
-
 #define FLAG_NOCOLOR     0x0001  /*!< \brief use colors in log messages, depending on level */
 #define FLAG_THREAD      0x0008  /*!< \brief display thread name in log messages */
 #define FLAG_LEVEL       0x0010  /*!< \brief display log level in log messages */
@@ -130,6 +110,7 @@ extern "C" {
 #define FLAG_THREAD_ID   0x0200
 #define FLAG_REAL_TIME   0x0400
 #define FLAG_INITIALIZED 0x8000
+/** @}*/
 
 #define SET_LOG_OPTION(O)   g_log->flag = (g_log->flag | O)
 #define CLEAR_LOG_OPTION(O) g_log->flag = (g_log->flag & (~O))
@@ -180,15 +161,11 @@ extern "C" {
     {NULL,-1}\
   }
 
-
-
 #define SET_LOG_DEBUG(B)   g_log->debug_mask = (g_log->debug_mask | B)
 #define CLEAR_LOG_DEBUG(B) g_log->debug_mask = (g_log->debug_mask & (~B))
 
 #define SET_LOG_DUMP(B)   g_log->dump_mask = (g_log->dump_mask | B)
 #define CLEAR_LOG_DUMP(B) g_log->dump_mask = (g_log->dump_mask & (~B))
-
-
 
 typedef enum {
   MIN_LOG_COMPONENTS = 0,
@@ -238,6 +215,8 @@ typedef enum {
   GNB_APP,
   NR_RRC,
   NR_MAC,
+  NR_MAC_DCI,
+  NR_PHY_DCI,
   NR_PHY,
   LOADER,
   ASN1,
@@ -246,12 +225,10 @@ typedef enum {
   ITTI,
   UTIL,
   MAX_LOG_PREDEF_COMPONENTS,
-}
-comp_name_t;
+} comp_name_t;
 
 #define MAX_LOG_DYNALLOC_COMPONENTS 20
 #define MAX_LOG_COMPONENTS (MAX_LOG_PREDEF_COMPONENTS + MAX_LOG_DYNALLOC_COMPONENTS)
-
 
 typedef struct {
   char *name; /*!< \brief string name of item */
@@ -271,7 +248,7 @@ typedef struct  {
   log_vprint_func_t vprint;
   log_print_func_t  print;
   /* SR: make the log buffer component relative */
-  char             log_buffer[MAX_LOG_TOTAL];
+  // char             log_buffer[MAX_LOG_TOTAL];
 } log_component_t;
 
 
@@ -283,8 +260,6 @@ typedef struct {
   uint64_t                debug_mask;
   uint64_t                dump_mask;
 } log_t;
-
-
 
 #ifdef LOG_MAIN
 log_t *g_log;
@@ -333,7 +308,7 @@ typedef struct {
   int enable_flag;
 } log_mem_cnt_t;
 
-/* @}*/
+/** @}*/
 
 /*!\fn int32_t write_file_matlab(const char *fname, const char *vname, void *data, int length, int dec, char format);
 \brief Write output file from signal data
@@ -384,9 +359,6 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
   " level:     add log level indication in log messages\n"\
   " thread:    add threads names in log messages\n"
 
-
-
-
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*   LOG global configuration parameters                                                                                                                                                */
 /*   optname                               help                                          paramflags         XXXptr               defXXXval                          type        numelt */
@@ -415,41 +387,166 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
 #  if T_TRACER
 #include "T.h"
 /* per component, level dependent macros */
-#    define LOG_E(c, x...) do { T(T_LEGACY_ ## c ## _ERROR, T_PRINTF(x))  ; if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_ERR     ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_ERR, x)     ;} } while (0)
-#    define LOG_W(c, x...) do { T(T_LEGACY_ ## c ## _WARNING, T_PRINTF(x)); if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_WARNING ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_WARNING, x) ;} } while (0)
-#    define LOG_A(c, x...) do { T(T_LEGACY_ ## c ## _INFO, T_PRINTF(x))   ; if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_ANALYSIS) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_ANALYSIS, x);} } while (0)
-#    define LOG_I(c, x...) do { T(T_LEGACY_ ## c ## _INFO, T_PRINTF(x))   ; if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_INFO    ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_INFO, x)    ;} } while (0)
-#    define LOG_D(c, x...) do { T(T_LEGACY_ ## c ## _DEBUG, T_PRINTF(x))  ; if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_DEBUG   ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_DEBUG, x)   ;} } while (0)
-#    define LOG_T(c, x...) do { T(T_LEGACY_ ## c ## _TRACE, T_PRINTF(x))  ; if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_TRACE   ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_TRACE, x)   ;} } while (0)
-#    define VLOG(c,l, f, args) do { if (T_stdout) { if( g_log->log_component[c].level >= l  ) vlogRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, l, f, args)   ;} } while (0)
+#define LOG_E(c, x...)                                                    \
+  do {                                                                    \
+    T(T_LEGACY_##c##_ERROR, T_PRINTF(x));                                 \
+    if (T_stdout) {                                                       \
+      if (g_log->log_component[c].level >= OAILOG_ERR)                    \
+        logRecord_mt(__FILE__, __FUNCTION__, __LINE__, c, OAILOG_ERR, x); \
+    }                                                                     \
+  } while (0)
+
+#define LOG_W(c, x...)                                                        \
+  do {                                                                        \
+    T(T_LEGACY_##c##_WARNING, T_PRINTF(x));                                   \
+    if (T_stdout) {                                                           \
+      if (g_log->log_component[c].level >= OAILOG_WARNING)                    \
+        logRecord_mt(__FILE__, __FUNCTION__, __LINE__, c, OAILOG_WARNING, x); \
+    }                                                                         \
+  } while (0)
+
+#define LOG_A(c, x...)                                                         \
+  do {                                                                         \
+    T(T_LEGACY_##c##_INFO, T_PRINTF(x));                                       \
+    if (T_stdout) {                                                            \
+      if (g_log->log_component[c].level >= OAILOG_ANALYSIS)                    \
+        logRecord_mt(__FILE__, __FUNCTION__, __LINE__, c, OAILOG_ANALYSIS, x); \
+    }                                                                          \
+  } while (0)
+
+#define LOG_I(c, x...)                                                     \
+  do {                                                                     \
+    T(T_LEGACY_##c##_INFO, T_PRINTF(x));                                   \
+    if (T_stdout) {                                                        \
+      if (g_log->log_component[c].level >= OAILOG_INFO)                    \
+        logRecord_mt(__FILE__, __FUNCTION__, __LINE__, c, OAILOG_INFO, x); \
+    }                                                                      \
+  } while (0)
+
+#define LOG_D(c, x...)                                                      \
+  do {                                                                      \
+    T(T_LEGACY_##c##_DEBUG, T_PRINTF(x));                                   \
+    if (T_stdout) {                                                         \
+      if (g_log->log_component[c].level >= OAILOG_DEBUG)                    \
+        logRecord_mt(__FILE__, __FUNCTION__, __LINE__, c, OAILOG_DEBUG, x); \
+    }                                                                       \
+  } while (0)
+
+#define LOG_DDUMP(c, b, s, f, x...)                      \
+  do {                                                   \
+    T(T_LEGACY_##c##_DEBUG, T_PRINTF(x));                \
+    if (T_stdout) {                                      \
+      if (g_log->log_component[c].level >= OAILOG_DEBUG) \
+        log_dump(c, b, s, f, x);                         \
+    }                                                    \
+  } while (0)
+
+#define LOG_T(c, x...)                                                      \
+  do {                                                                      \
+    T(T_LEGACY_##c##_TRACE, T_PRINTF(x));                                   \
+    if (T_stdout) {                                                         \
+      if (g_log->log_component[c].level >= OAILOG_TRACE)                    \
+        logRecord_mt(__FILE__, __FUNCTION__, __LINE__, c, OAILOG_TRACE, x); \
+    }                                                                       \
+  } while (0)
+
+#define VLOG(c, l, f, args)                                             \
+  do {                                                                  \
+    if (T_stdout) {                                                     \
+      if (g_log->log_component[c].level >= l)                           \
+        vlogRecord_mt(__FILE__, __FUNCTION__, __LINE__, c, l, f, args); \
+    }                                                                   \
+  } while (0)
+
 /* macro used to dump a buffer or a message as in openair2/RRC/LTE/RRC_eNB.c, replaces LOG_F macro */
-#    define LOG_DUMPMSG(c, f, b, s, x...) do {  if(g_log->dump_mask & f) log_dump(c, b, s, LOG_DUMP_CHAR, x)  ;}   while (0)  /* */
+#define LOG_DUMPMSG(c, f, b, s, x...)      \
+  do {                                     \
+    if (g_log->dump_mask & f)              \
+      log_dump(c, b, s, LOG_DUMP_CHAR, x); \
+  } while (0)
+
 /* bitmask dependent macros, to isolate debugging code */
-#    define LOG_DEBUGFLAG(D) (g_log->debug_mask & D)
+#define LOG_DEBUGFLAG(D) (g_log->debug_mask & D)
 
 /* bitmask dependent macros, to generate debug file such as matlab file or message dump */
-#    define LOG_DUMPFLAG(D) (g_log->dump_mask & D)
-#    define LOG_M(file, vector, data, len, dec, format) do { write_file_matlab(file, vector, data, len, dec, format, 0);} while(0)/* */
+#define LOG_DUMPFLAG(D) (g_log->dump_mask & D)
+
+#define LOG_M(file, vector, data, len, dec, format)             \
+  do {                                                          \
+    write_file_matlab(file, vector, data, len, dec, format, 0); \
+  } while (0)
+
 /* define variable only used in LOG macro's */
-#    define LOG_VAR(A,B) A B
-#  else /* T_TRACER */
-#    define LOG_E(c, x...) do { if( g_log->log_component[c].level >= OAILOG_ERR     ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_ERR, x)     ;}  while (0)
-#    define LOG_W(c, x...) do { if( g_log->log_component[c].level >= OAILOG_WARNING ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_WARNING, x) ;}  while (0)
-#    define LOG_A(c, x...) do { if( g_log->log_component[c].level >= OAILOG_ANALYSIS) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_ANALYSIS, x);}  while (0)
-#    define LOG_I(c, x...) do { if( g_log->log_component[c].level >= OAILOG_INFO    ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_INFO, x)    ;}  while (0)
-#    define LOG_D(c, x...) do { if( g_log->log_component[c].level >= OAILOG_DEBUG   ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_DEBUG, x)   ;}  while (0)
-#    define LOG_T(c, x...) do { if( g_log->log_component[c].level >= OAILOG_TRACE   ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_TRACE, x)   ;}  while (0)
-#    define VLOG(c,l, f, args) do { if( g_log->log_component[c].level >= l  ) vlogRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, l, f, args)   ; } while (0)
+#define LOG_VAR(A, B) A B
 
-#    define nfapi_log(FILE, FNC, LN, COMP, LVL, FMT...)
-#    define LOG_DEBUGFLAG(D)  (g_log->dump_mask & D)
-#    define LOG_DUMPFLAG(D) (g_log->debug_mask & D)
-#    define LOG_DUMPMSG(c, f, b, s, x...) do {  if(g_log->dump_mask & f) log_dump(c, b, s, LOG_DUMP_CHAR, x)  ;}   while (0)  /* */
+#else /* no T_TRACER */
 
-#    define LOG_M(file, vector, data, len, dec, format) do { write_file_matlab(file, vector, data, len, dec, format, 0);} while(0)
-#    define LOG_VAR(A,B) A B
-#    define T_ACTIVE(a) (0) 
-#  endif /* T_TRACER */
+#define LOG_E(c, x...)                                                  \
+  do {                                                                  \
+    if (g_log->log_component[c].level >= OAILOG_ERR)                    \
+      logRecord_mt(__FILE__, __FUNCTION__, __LINE__, c, OAILOG_ERR, x); \
+  } while (0)
+
+#define LOG_W(c, x...)                                                      \
+  do {                                                                      \
+    if (g_log->log_component[c].level >= OAILOG_WARNING)                    \
+      logRecord_mt(__FILE__, __FUNCTION__, __LINE__, c, OAILOG_WARNING, x); \
+  } while (0)
+
+#define LOG_A(c, x...)                                                       \
+  do {                                                                       \
+    if (g_log->log_component[c].level >= OAILOG_ANALYSIS)                    \
+      logRecord_mt(__FILE__, __FUNCTION__, __LINE__, c, OAILOG_ANALYSIS, x); \
+  } while (0)
+
+#define LOG_I(c, x...)                                                   \
+  do {                                                                   \
+    if (g_log->log_component[c].level >= OAILOG_INFO)                    \
+      logRecord_mt(__FILE__, __FUNCTION__, __LINE__, c, OAILOG_INFO, x); \
+  } while (0)
+
+#define LOG_D(c, x...)                                                    \
+  do {                                                                    \
+    if (g_log->log_component[c].level >= OAILOG_DEBUG)                    \
+      logRecord_mt(__FILE__, __FUNCTION__, __LINE__, c, OAILOG_DEBUG, x); \
+  } while (0)
+
+#define LOG_DDUMP(c, b, s, f, x...)                    \
+  do {                                                 \
+    if (g_log->log_component[c].level >= OAILOG_DEBUG) \
+      log_dump(c, b, s, f, x);                         \
+  } while (0)
+
+#define LOG_T(c, x...)                                                    \
+  do {                                                                    \
+    if (g_log->log_component[c].level >= OAILOG_TRACE)                    \
+      logRecord_mt(__FILE__, __FUNCTION__, __LINE__, c, OAILOG_TRACE, x); \
+  } while (0)
+
+#define VLOG(c, l, f, args)                                           \
+  do {                                                                \
+    if (g_log->log_component[c].level >= l)                           \
+      vlogRecord_mt(__FILE__, __FUNCTION__, __LINE__, c, l, f, args); \
+  } while (0)
+
+#define nfapi_log(FILE, FNC, LN, COMP, LVL, FMT...)
+#define LOG_DEBUGFLAG(D) (g_log->dump_mask & D)
+#define LOG_DUMPFLAG(D) (g_log->debug_mask & D)
+#define LOG_DUMPMSG(c, f, b, s, x...)      \
+  do {                                     \
+    if (g_log->dump_mask & f)              \
+      log_dump(c, b, s, LOG_DUMP_CHAR, x); \
+  } while (0) /* */
+
+#define LOG_M(file, vector, data, len, dec, format)             \
+  do {                                                          \
+    write_file_matlab(file, vector, data, len, dec, format, 0); \
+  } while (0)
+
+#define LOG_VAR(A, B) A B
+#define T_ACTIVE(a) (0)
+
+#endif /* T_TRACER */
 
 /* avoid warnings for variables only used in LOG macro's but set outside debug section */
 #define GCC_NOTUSED   __attribute__((unused))
@@ -460,8 +557,7 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
 #define LOG_UI(c, x...) do {logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_INFO, x) ; } while(0)
 #define LOG_UDUMPMSG(c, b, s, f, x...) do { log_dump(c, b, s, f, x)  ;}   while (0)  /* */
 #    define LOG_MM(file, vector, data, len, dec, format) do { write_file_matlab(file, vector, data, len, dec, format, 1);} while(0)
-/* @}*/
-
+/** @}*/
 
 /** @defgroup _useful_functions useful functions in LOG
  *  @ingroup _macro
@@ -472,8 +568,7 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
 #define LOG_EXIT(c)  do { LOG_END(c); return;}while(0)  /*!< \brief Macro to log a message with severity TRACE when exiting a function */
 #define LOG_RETURN(c,r) do {LOG_T(c,"Leaving %s (rc = %08lx)\n", __FUNCTION__ , (unsigned long)(r) );return(r);}while(0)  /*!< \brief Macro to log a function exit, including integer value, then to return a value to the calling function */
 
-
-/* @}*/
+/** @}*/
 
 #ifdef __cplusplus
 }

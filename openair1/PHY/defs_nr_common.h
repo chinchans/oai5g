@@ -43,7 +43,7 @@
 #define nr_slot_t lte_subframe_t
 
 #define MAX_NUM_SUBCARRIER_SPACING 5
-#define NR_MAX_OFDM_SYMBOL_SIZE 4096
+#define NR_MAX_OFDM_SYMBOL_SIZE 8192
 
 #define NR_SYMBOLS_PER_SLOT NR_NUMBER_OF_SYMBOLS_PER_SLOT
 
@@ -79,7 +79,6 @@
 
 #define NR_MAX_PDCCH_AGG_LEVEL 16 // 3GPP TS 38.211 V15.8 Section 7.3.2 Table 7.3.2.1-1: Supported PDCCH aggregation levels
 
-#define NR_MAX_NB_LAYERS 4 // 8
 #define NR_MAX_NB_PORTS 32
 
 #define NR_MAX_PDSCH_TBS 3824
@@ -176,7 +175,7 @@ struct NR_DL_FRAME_PARMS {
   /// subcarrier spacing (15,30,60,120)
   uint32_t subcarrier_spacing;
   /// 3/4 sampling
-  uint8_t threequarter_fs;
+  int threequarter_fs;
   /// Size of FFT
   uint16_t ofdm_symbol_size;
   /// Number of prefix samples in all but first symbol of slot
