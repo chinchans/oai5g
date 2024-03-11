@@ -622,7 +622,6 @@ int main( int argc, char **argv ) {
   mode = normal_txrx;
   memset(tx_max_power,0,sizeof(int)*MAX_NUM_CCs);
   logInit();
-  set_latency_target();
   printf("Reading in command-line options\n");
   get_options(uniqCfg);
 

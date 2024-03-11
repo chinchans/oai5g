@@ -563,7 +563,6 @@ int main(int argc, char **argv)
     }
 
     init_openair0();
-    set_latency_target();
 
     if(IS_SOFTMODEM_DOSCOPE_QT) {
       load_softscope("nrqt",PHY_vars_UE_g[0][0]);

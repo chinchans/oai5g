@@ -42,8 +42,6 @@ int background_system(char *command);
 
 void start_background_system(void);
 
-void set_latency_target(void);
-
 void threadCreate(pthread_t *t, void *(*func)(void *), void *param, char *name, int affinity, int priority);
 
 #define SCHED_OAI SCHED_RR
