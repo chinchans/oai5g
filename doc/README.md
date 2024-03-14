@@ -19,6 +19,7 @@
 - [FEATURE_SET.md](./FEATURE_SET.md): lists supported features
 - [GET_SOURCES.md](./GET_SOURCES.md): how to download the sources
 - [BUILD.md](./BUILD.md): how to build the sources
+- [cpu_threading.md](./cpu_threading.md): performance and security considerations
 - [cross-compile.md](./cross-compile.md): how to cross-compile OAI for ARM
 - [clang-format.md](./clang-format.md): how to format the code
 - [sanitizers.md](./dev_tools/sanitizers.md): how to run with ASan/UBSan/MemSAN/TSan
