@@ -23,6 +23,7 @@
 #define _SYSTEM_H_OAI_
 #include <stdint.h>
 #include <pthread.h>
+#include <stdbool.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -42,6 +43,7 @@ int background_system(char *command);
 
 void start_background_system(void);
 
+bool has_cap_sys_nice(void);
 void threadCreate(pthread_t *t, void *(*func)(void *), void *param, char *name, int affinity, int priority);
 
 #define SCHED_OAI SCHED_RR
