@@ -81,16 +81,14 @@ void initializeAllUeStates(instance_t instance)
   if(NODE_IS_DU(RC.nrrrc[0]->node_type)) {
     gNB_MAC_INST *mac = RC.nrmac[0];
     NR_SCHED_LOCK(&mac->sched_lock);
+
     NR_UE_info_t **UE_list = (&mac->UE_info)->list;
     NR_UE_info_t *UE = *UE_list;
-    
-    instance_t f1inst = getCxt(0)->gtpInst;
 
     while (UE != NULL) {
-      nr_mac_release_ue_f1ap_reset(mac, UE->rnti);
-      if(f1inst >= 0) {
-        newGtpuDeleteAllTunnels(f1inst, UE->rnti);
-      }
+      int rnti = UE->rnti;
+      nr_mac_release_ue_f1ap_reset(mac, rnti);
+      newGtpuDeleteAllTunnels(instance, rnti);
       UE_list = (&mac->UE_info)->list;
       UE = *UE_list;
     }
