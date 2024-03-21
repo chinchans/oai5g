@@ -130,6 +130,7 @@ int DU_send_RESET_ACKNOWLEDGE(sctp_assoc_t assoc_id, f1ap_reset_ack_t *f1ap_rese
   asn1cCalloc(pdu.choice.successfulOutcome, successMsg);
   successMsg->procedureCode = F1AP_ProcedureCode_id_Reset;
   successMsg->criticality   = F1AP_Criticality_reject;
+  successMsg->value.present = F1AP_SuccessfulOutcome__value_PR_ResetAcknowledge;
   F1AP_ResetAcknowledge_t *f1ResetAcknowledge = &successMsg->value.choice.ResetAcknowledge;
   /* mandatory */
   /* c1. Transaction ID (integer value) */
