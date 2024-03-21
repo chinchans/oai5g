@@ -35,6 +35,7 @@
 #define F1AP_DU_REGISTER_REQ(mSGpTR)               (mSGpTR)->ittiMsg.f1ap_du_register_req
 
 #define F1AP_RESET(mSGpTR)                         (mSGpTR)->ittiMsg.f1ap_reset
+#define F1AP_RESET_ACK(mSGpTR)                         (mSGpTR)->ittiMsg.f1ap_reset_ack
 
 #define F1AP_SETUP_REQ(mSGpTR)                     (mSGpTR)->ittiMsg.f1ap_setup_req
 #define F1AP_SETUP_RESP(mSGpTR)                    (mSGpTR)->ittiMsg.f1ap_setup_resp
@@ -480,13 +481,26 @@ typedef struct f1ap_lost_connection_t {
   int dummy;
 } f1ap_lost_connection_t;
 
+typedef enum F1AP_ResetType_e {
+  F1AP_RESET_ALL,
+  F1AP_RESET_PART_OF_F1_INTERFACE
+} f1ap_ResetType_t;
+
 typedef struct f1ap_reset_t {
   /// ulong transaction id
-  uint64_t transaction_id;
-  f1ap_Cause_t cause;
-  long cause_value;
+  uint64_t          transaction_id;
+  f1ap_Cause_t      cause;
+  long              cause_value;
+  f1ap_ResetType_t  reset_type;
 
-  // TODO
+  // TODO: handle partial f1 reset
 } f1ap_reset_t;
+
+typedef struct f1ap_reset_ack_t {
+  /// ulong transaction id
+  uint64_t          transaction_id;
+
+  // TODO: handle partial f1 reset
+} f1ap_reset_ack_t;
 
 #endif /* F1AP_MESSAGES_TYPES_H_ */

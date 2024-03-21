@@ -3035,6 +3035,7 @@ void nr_mac_release_ue_f1ap_reset(gNB_MAC_INST *mac, int rnti)
 
   nr_rlc_remove_ue(rnti);
   mac_remove_nr_ue(mac, rnti);
+  
 
   // the CU might not know such UE, e.g., because we never sent a message to
   // it, so there might not be a corresponding entry for such UE in the look up
@@ -3045,12 +3046,6 @@ void nr_mac_release_ue_f1ap_reset(gNB_MAC_INST *mac, int rnti)
     // unlock the scheduler temporarily to prevent possible deadlocks with
     // du_remove_f1_ue_data() (and also while sending the message to RRC)
     NR_SCHED_UNLOCK(&mac->sched_lock);
-    // f1_ue_data_t ue_data = du_get_f1_ue_data(rnti);
-    // f1ap_ue_context_release_complete_t complete = {
-    //   .gNB_CU_ue_id = ue_data.secondary_ue,
-    //   .gNB_DU_ue_id = rnti,
-    // };
-    // mac->mac_rrc.ue_context_release_complete(&complete);
     du_remove_f1_ue_data(rnti);
     NR_SCHED_LOCK(&mac->sched_lock);
   }

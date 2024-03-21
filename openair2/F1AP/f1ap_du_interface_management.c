@@ -38,9 +38,6 @@
 #include "assertions.h"
 
 #include "GNB_APP/gnb_paramdef.h"
-#include "openair2/LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
-#include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
-#include "openair3/ocp-gtpu/gtp_itf.h"
 
 int to_NRNRB(int nrb) {
   for (int i=0; i<sizeofArray(nrb_lut); i++)
@@ -55,53 +52,106 @@ int to_NRNRB(int nrb) {
 
 int DU_handle_RESET(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
 {
-  // LOG_D(F1AP, "DU_handle_RESET\n");
-  // F1AP_Reset_t  *container;
-  // F1AP_ResetIEs_t *ie;
-  // int i = 0;
-  // DevAssert(pdu != NULL);
-  // container = &pdu->choice.initiatingMessage->value.choice.Reset;
+  LOG_D(F1AP, "DU_handle_RESET\n");\
+  F1AP_Reset_t  *container;
+  F1AP_ResetIEs_t *ie;
+  DevAssert(pdu != NULL);
+  container = &pdu->choice.initiatingMessage->value.choice.Reset;
 
-  // MessageDef *msg_p = itti_alloc_new_message(TASK_DU_F1, 0, F1AP_RESET);
-  // msg_p->ittiMsgHeader.originInstance = assoc_id;
-  // f1ap_reset_t *f1ap_reset = &F1AP_RESET(msg_p);
-
-  // /* Transaction ID */
-  // F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_ResetIEs_t, ie, container, F1AP_ProtocolIE_ID_id_TransactionID, true);
-  // f1ap_reset->transaction_id = ie->value.choice.TransactionID;
-  
-  // /* Cause */
-  // F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_ResetIEs_t, ie, container, F1AP_ProtocolIE_ID_id_Cause, true);
-  // AssertFatal(1==0,"Not implemented yet\n");
-
-  gNB_MAC_INST *mac = RC.nrmac[0];
-
-  LOG_D(F1AP, "acquiring lock\n");
-  NR_SCHED_LOCK(&mac->sched_lock);
-  LOG_D(F1AP, "lock acquired\n");
-
-  NR_UE_info_t **UE_list = (&mac->UE_info)->list;
-  NR_UE_info_t *UE = *UE_list;
-  while (UE != NULL) {
-    nr_mac_release_ue_f1ap_reset(mac, UE->rnti);
-    UE_list = (&mac->UE_info)->list;
-    UE = *UE_list;
+  /* Reset == Non UE-related procedure -> stream 0 */
+  if (stream != 0) {
+    LOG_W(F1AP, "[SCTP %d] Received Reset on stream != 0 (%d)\n",
+        assoc_id, stream);
   }
 
-  // UE_iterator((&mac->UE_info)->list, UE) {
-  //   nr_mac_release_ue(mac, UE->rnti);
-  //   // newGtpuDeleteAllTunnels(0, UE->rnti);
-  // }
+  MessageDef *msg_p = itti_alloc_new_message(TASK_DU_F1, 0, F1AP_RESET);
+  msg_p->ittiMsgHeader.originInstance = assoc_id;
+  f1ap_reset_t *f1ap_reset = &F1AP_RESET(msg_p);
 
-  LOG_D(F1AP, "releasing lock\n");
-  NR_SCHED_UNLOCK(&mac->sched_lock);
-  LOG_D(F1AP, "lock released\n");
+  /* Transaction ID */
+  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_ResetIEs_t, ie, container, F1AP_ProtocolIE_ID_id_TransactionID, true);
+  f1ap_reset->transaction_id = ie->value.choice.TransactionID;
+  LOG_D(F1AP, "req->transaction_id %lu \n", f1ap_reset->transaction_id);
+  
+  /* Cause */
+  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_ResetIEs_t, ie, container, F1AP_ProtocolIE_ID_id_Cause, true);
+  switch(ie->value.choice.Cause.present) 
+  {
+    case F1AP_Cause_PR_radioNetwork:
+      LOG_D(F1AP, "Cause: Radio Network\n");
+      f1ap_reset->cause = F1AP_CAUSE_RADIO_NETWORK;
+      f1ap_reset->cause_value = ie->value.choice.Cause.choice.radioNetwork;
+      break;
+    case F1AP_Cause_PR_transport:
+      LOG_D(F1AP, "Cause: Transport\n");
+      f1ap_reset->cause = F1AP_CAUSE_TRANSPORT;
+      f1ap_reset->cause_value = ie->value.choice.Cause.choice.transport;
+      break;
+    case F1AP_Cause_PR_protocol:
+      LOG_D(F1AP, "Cause: Protocol\n");
+      f1ap_reset->cause = F1AP_CAUSE_PROTOCOL;
+      f1ap_reset->cause_value = ie->value.choice.Cause.choice.protocol;
+      break;
+    case F1AP_Cause_PR_misc:
+      LOG_D(F1AP, "Cause: Misc\n");
+      f1ap_reset->cause = F1AP_CAUSE_MISC;
+      f1ap_reset->cause_value = ie->value.choice.Cause.choice.misc;
+      break;
+    default:
+      AssertFatal(1==0,"Unknown cause\n");
+  }
 
+  /* ResetType */
+  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_ResetIEs_t, ie, container, F1AP_ProtocolIE_ID_id_ResetType, true);
+  switch(ie->value.choice.ResetType.present) {
+    case F1AP_ResetType_PR_f1_Interface:
+      LOG_D(F1AP, "ResetType: F1 Interface\n");
+      f1ap_reset->reset_type = F1AP_RESET_ALL;
+      break;
+    case F1AP_ResetType_PR_partOfF1_Interface:
+      LOG_D(F1AP, "ResetType: Part of F1 Interface\n");
+      f1ap_reset->reset_type = F1AP_RESET_PART_OF_F1_INTERFACE;
+      break;
+    default:
+      AssertFatal(1==0,"Unknown reset type\n");
+  }
+  
+  f1_reset(f1ap_reset);
   return 0;
 }
 
-int DU_send_RESET_ACKKNOWLEDGE(sctp_assoc_t assoc_id, F1AP_ResetAcknowledge_t *ResetAcknowledge) {
-  AssertFatal(1==0,"Not implemented yet\n");
+int DU_send_RESET_ACKNOWLEDGE(sctp_assoc_t assoc_id, f1ap_reset_ack_t *f1ap_reset_ack) {
+  F1AP_F1AP_PDU_t       pdu= {0};
+  uint8_t  *buffer;
+  uint32_t  len;
+  /* Create */
+  /* 0. pdu Type */
+  pdu.present = F1AP_F1AP_PDU_PR_successfulOutcome;
+  asn1cCalloc(pdu.choice.successfulOutcome, successMsg);
+  successMsg->procedureCode = F1AP_ProcedureCode_id_Reset;
+  successMsg->criticality   = F1AP_Criticality_reject;
+  F1AP_ResetAcknowledge_t *f1ResetAcknowledge = &successMsg->value.choice.ResetAcknowledge;
+  /* mandatory */
+  /* c1. Transaction ID (integer value) */
+  asn1cSequenceAdd(f1ResetAcknowledge->protocolIEs.list, F1AP_ResetAcknowledgeIEs_t, ieC1);
+  ieC1->id                        = F1AP_ProtocolIE_ID_id_TransactionID;
+  ieC1->criticality               = F1AP_Criticality_reject;
+  ieC1->value.present             = F1AP_ResetAcknowledgeIEs__value_PR_TransactionID;
+  ieC1->value.choice.TransactionID = f1ap_reset_ack->transaction_id;
+  
+  // TODO: 
+  // handle partial F1 interface reset
+
+  /* encode */
+  if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
+    LOG_E(F1AP, "Failed to encode F1AP_ResetAcknowledge\n");
+    return -1;
+  }
+
+  /* send */
+  ASN_STRUCT_RESET(asn_DEF_F1AP_F1AP_PDU, &pdu);
+  f1ap_itti_send_sctp_data_req(assoc_id, buffer, len);
+  return 0;
 }
 
 int DU_send_RESET(sctp_assoc_t assoc_id, F1AP_Reset_t *Reset)

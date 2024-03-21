@@ -105,6 +105,25 @@ static bool check_plmn_identity(const f1ap_plmn_t *check_plmn, const f1ap_plmn_t
   return plmn->mcc == check_plmn->mcc && plmn->mnc_digit_length == check_plmn->mnc_digit_length && plmn->mnc == check_plmn->mnc;
 }
 
+void f1_reset(const f1ap_reset_t *reset)
+{ 
+    LOG_I(MAC, "received F1 Reset from CU\n");
+    instance_t f1inst = get_f1_gtp_instance();
+    
+    if(reset->reset_type == F1AP_RESET_ALL) {
+      initializeAllUeStates(f1inst);
+    } else {
+      AssertFatal(1==0, "Partial F1 Interface Reset not handled\n");
+    }
+
+    f1ap_reset_ack_t ack = {
+      .transaction_id = reset->transaction_id
+    };
+
+    gNB_MAC_INST *mac = RC.nrmac[0];
+    mac->mac_rrc.f1_reset_ack(reset, &ack);
+}
+
 void f1_setup_response(const f1ap_setup_resp_t *resp)
 {
   LOG_I(MAC, "received F1 Setup Response from CU %s\n", resp->gNB_CU_name);

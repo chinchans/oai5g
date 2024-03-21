@@ -87,6 +87,19 @@ void du_task_handle_sctp_association_resp(instance_t instance, sctp_new_associat
   f1ap_du_data->du.assoc_id = sctp_new_association_resp->assoc_id;
   f1ap_du_data->sctp_in_streams  = sctp_new_association_resp->in_streams;
   f1ap_du_data->sctp_out_streams = sctp_new_association_resp->out_streams;
+
+  // NOTE: before sending F1 Setup, we should initialize the UE states.
+  // This is to handle cases when DU loses the existing SCTP connection,
+  // reestablishes a new one to either a new CU or the same CU.
+  // This triggers a new F1 Setup Request from DU to CU.
+  // Reinitializing the UE states is necessary to avoid any inconsistent states
+  // between DU and CU.
+
+  // TS38.473 [Sec 8.2.3.1]: "This procedure also re-initialises the F1AP UE-related 
+  // contexts (if any) and erases all related signalling connections
+  // in the two nodes like a Reset procedure would do."
+  initializeAllUeStates(instance);
+
   /* setup parameters for F1U and start the server */
   DU_send_F1_SETUP_REQUEST(f1ap_du_data->du.assoc_id, &f1ap_du_data->setupReq);
 }
@@ -131,6 +144,10 @@ void *F1AP_DU_task(void *arg) {
         getCxt(myInstance)->gtpInst = gtpInst;
         DUuniqInstance = gtpInst;
       } break;
+
+      case F1AP_RESET_ACK:
+        DU_send_RESET_ACKNOWLEDGE(assoc_id, &F1AP_RESET_ACK(msg));
+        break;
 
       case F1AP_GNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE:
         DU_send_gNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(assoc_id,

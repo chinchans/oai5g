@@ -420,6 +420,9 @@ f1ap_cudu_inst_t *getCxt(instance_t instanceP);
 void createF1inst(instance_t instanceP, f1ap_setup_req_t *req, f1ap_net_config_t *nc);
 void destroyF1inst(instance_t instance);
 
+void initializeAllUeStates(instance_t instance);
+void initializeUeStates(instance_t instance);
+
 //lts: C struct type is not homogeneous, so we need macros instead of functions
 #define addnRCGI(nRCGi, servedCelL) \
   MCC_MNC_TO_PLMNID((servedCelL)->plmn.mcc,(servedCelL)->plmn.mnc,(servedCelL)->plmn.mnc_digit_length, \
