@@ -1916,7 +1916,7 @@ static uint8_t pack_measurement_response(void *msg, uint8_t **ppWritePackedMsg, 
           pack_vendor_extension_tlv(pNfapiMsg->vendor_extension, ppWritePackedMsg, end, config));
 }
 
-static uint8_t pack_nr_p5_message_body(nfapi_p4_p5_message_header_t *header, uint8_t **ppWritePackedMsg, uint8_t *end, nfapi_p4_p5_codec_config_t *config) {
+uint8_t pack_nr_p5_message_body(nfapi_p4_p5_message_header_t *header, uint8_t **ppWritePackedMsg, uint8_t *end, nfapi_p4_p5_codec_config_t *config) {
   uint8_t result = 0;
 
   // look for the specific message
@@ -2579,7 +2579,7 @@ static uint8_t unpack_param_response(uint8_t **ppReadPackedMsg, uint8_t *end, vo
                              &pNfapiMsg->vendor_extension));
 }
 
-static uint8_t unpack_nr_param_response(uint8_t **ppReadPackedMsg, uint8_t *end, void *msg, nfapi_p4_p5_codec_config_t *config)
+uint8_t unpack_nr_param_response(uint8_t **ppReadPackedMsg, uint8_t *end, void *msg, nfapi_p4_p5_codec_config_t *config)
 {
   nfapi_nr_param_response_scf_t *pNfapiMsg = (nfapi_nr_param_response_scf_t *)msg;
   unpack_tlv_t unpack_fns[] = {
@@ -3226,7 +3226,7 @@ static uint8_t unpack_config_response(uint8_t **ppReadPackedMsg, uint8_t *end, v
            unpack_tlv_list(NULL, 0, ppReadPackedMsg, end, config, &(pNfapiMsg->vendor_extension)));
 }
 
-static uint8_t unpack_nr_config_response(uint8_t **ppReadPackedMsg, uint8_t *end, void *msg, nfapi_p4_p5_codec_config_t *config)
+uint8_t unpack_nr_config_response(uint8_t **ppReadPackedMsg, uint8_t *end, void *msg, nfapi_p4_p5_codec_config_t *config)
 {
   nfapi_nr_config_response_scf_t *pNfapiMsg = (nfapi_nr_config_response_scf_t *)msg;
   uint8_t invalid_unsupported_TLVs, invalidTLVsIdle, InvalidTLVsRunning, missingTLVS;
