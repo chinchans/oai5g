@@ -882,7 +882,7 @@ static void generatePduSessionEstablishRequest(nr_ue_nas_t *nas, as_nas_info_t *
   initialNasMsg->length = security_header_len + mm_msg_encode(mm_msg, (uint8_t*)(initialNasMsg->data+security_header_len), size-security_header_len);
 
   stream_cipher.context    = nas->security_container->integrity_context;
-  stream_cipher.count      = nas->security.mm_counter++;
+  stream_cipher.count      = nas->security.mm_counter;
   stream_cipher.bearer     = 1;
   stream_cipher.direction  = 0;
   stream_cipher.message    = (unsigned char *)(initialNasMsg->data + 6);
