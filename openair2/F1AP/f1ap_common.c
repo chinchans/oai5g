@@ -31,8 +31,6 @@
  */
 
 #include "f1ap_common.h"
-#include "LAYER2/NR_MAC_gNB/mac_proto.h"
-#include "openair3/ocp-gtpu/gtp_itf.h"
 
 static f1ap_cudu_inst_t *f1_inst[NUMBER_OF_gNB_MAX]= {0};
 
@@ -74,33 +72,4 @@ void destroyF1inst(instance_t instance)
   free(f1_inst[instance]);
   f1_inst[instance] = NULL;
   pthread_mutex_unlock(&f1_inst_mtx);
-}
-
-void initializeAllUeStates(instance_t instance)
-{
-  if(NODE_IS_DU(RC.nrrrc[0]->node_type)) {
-    gNB_MAC_INST *mac = RC.nrmac[0];
-    NR_SCHED_LOCK(&mac->sched_lock);
-
-    NR_UE_info_t **UE_list = (&mac->UE_info)->list;
-    NR_UE_info_t *UE = *UE_list;
-
-    while (UE != NULL) {
-      int rnti = UE->rnti;
-      nr_mac_release_ue_f1ap_reset(mac, rnti);
-      newGtpuDeleteAllTunnels(instance, rnti);
-      UE_list = (&mac->UE_info)->list;
-      UE = *UE_list;
-    }
-    NR_SCHED_UNLOCK(&mac->sched_lock);
-  } else {
-    AssertFatal(1==0, "F1AP UE state initialization not implemented for CU\n");
-  }
-}
-
-void initializeUeStates(instance_t instance)
-{
-  // TODO: extend this to handle partial initialization
-  // This is for ResetType - partial F1 interface
-  AssertFatal(1==0, "F1AP UE state initialization not implemented for CU\n");
 }

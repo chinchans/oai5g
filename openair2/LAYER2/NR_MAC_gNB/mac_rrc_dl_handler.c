@@ -105,13 +105,39 @@ static bool check_plmn_identity(const f1ap_plmn_t *check_plmn, const f1ap_plmn_t
   return plmn->mcc == check_plmn->mcc && plmn->mnc_digit_length == check_plmn->mnc_digit_length && plmn->mnc == check_plmn->mnc;
 }
 
-void f1_reset(const f1ap_reset_t *reset)
+void du_initialize_all_ue_states()
+{
+  gNB_MAC_INST *mac = RC.nrmac[0];
+  NR_SCHED_LOCK(&mac->sched_lock);
+
+  NR_UE_info_t **UE_list = (&mac->UE_info)->list;
+  NR_UE_info_t *UE = *UE_list;
+
+  instance_t f1inst = get_f1_gtp_instance();
+
+  while (UE != NULL) {
+    int rnti = UE->rnti;
+    nr_mac_release_ue_f1ap_reset(mac, rnti);
+    newGtpuDeleteAllTunnels(f1inst, rnti);
+    UE_list = (&mac->UE_info)->list;
+    UE = *UE_list;
+  }
+  NR_SCHED_UNLOCK(&mac->sched_lock);
+}
+
+void du_initialize_ue_states()
+{
+  // TODO: extend this to handle partial initialization
+  // This is for ResetType - partial F1 interface
+  AssertFatal(1==0, "Partial F1AP UE state initialization not implemented.\n");
+}
+
+void f1_du_reset(const f1ap_reset_t *reset)
 { 
     LOG_I(MAC, "received F1 Reset from CU\n");
-    instance_t f1inst = get_f1_gtp_instance();
     
     if(reset->reset_type == F1AP_RESET_ALL) {
-      initializeAllUeStates(f1inst);
+      du_initialize_all_ue_states();
     } else {
       AssertFatal(1==0, "Partial F1 Interface Reset not handled\n");
     }

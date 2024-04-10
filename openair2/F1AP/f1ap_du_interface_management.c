@@ -116,7 +116,7 @@ int DU_handle_RESET(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream,
       AssertFatal(1==0,"Unknown reset type\n");
   }
   
-  f1_reset(f1ap_reset);
+  f1_du_reset(f1ap_reset);
   return 0;
 }
 
@@ -186,6 +186,18 @@ int DU_handle_ERROR_INDICATION(instance_t instance, sctp_assoc_t assoc_id, uint3
 // SETUP REQUEST
 int DU_send_F1_SETUP_REQUEST(sctp_assoc_t assoc_id, f1ap_setup_req_t *setup_req)
 {
+  // NOTE: before sending F1 Setup, we should initialize the UE states.
+  // This is to handle cases when DU loses the existing SCTP connection,
+  // reestablishes a new one to either a new CU or the same CU.
+  // This triggers a new F1 Setup Request from DU to CU.
+  // Reinitializing the UE states is necessary to avoid any inconsistent states
+  // between DU and CU.
+
+  // TS38.473 [Sec 8.2.3.1]: "This procedure also re-initialises the F1AP UE-related 
+  // contexts (if any) and erases all related signalling connections
+  // in the two nodes like a Reset procedure would do."
+  du_initialize_all_ue_states();
+
   F1AP_F1AP_PDU_t       pdu= {0};
   uint8_t  *buffer;
   uint32_t  len;
