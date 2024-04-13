@@ -294,7 +294,7 @@ configmodule_interface_t *load_configmodule(int argc,
     /* -O argument doesn't contain ":" separator, assume -O <conf file> option, default cfgmode to libconfig
        with one parameter, the path to the configuration file cfgmode must not be NULL */
     modeparams=cfgmode;
-    cfgmode=strdup(CONFIG_LIBCONFIGFILE);
+    cfgmode = CONFIG_LIBCONFIGFILE;
   }
   static configmodule_interface_t *cfgptr;
   if (cfgptr)
@@ -343,9 +343,18 @@ configmodule_interface_t *load_configmodule(int argc,
       atoken = strtok_r(NULL,":",&strtokctx);
     }
 
-    printf("[CONFIG] get parameters from %s ", cfgmode);
     for (i = 0; i < cfgptr->num_cfgP; i++) {
-      printf("%s ", cfgptr->cfgP[i]);
+      /* check if that file actually exists */
+      if (access(cfgptr->cfgP[i], F_OK) != 0) {
+        fprintf(stderr, "error: file %s does not exist\n", cfgptr->cfgP[i]);
+        for (int j = 0; j < cfgptr->num_cfgP; ++j)
+          free(cfgptr->cfgP[j]);
+        free(modeparams);
+        free(cfgptr->cfgmode);
+        free(cfgptr->argv_info);
+        free(cfgptr);
+        return NULL;
+      }
     }
 
   if (cfgptr->rtflags & CONFIG_PRINTPARAMS) {
@@ -375,8 +384,6 @@ configmodule_interface_t *load_configmodule(int argc,
   printf("[CONFIG] debug flags: 0x%08x\n", cfgptr->rtflags);
 
   if (modeparams != NULL) free(modeparams);
-
-  if (cfgmode != NULL) free(cfgmode);
 
   if (CONFIG_ISFLAGSET(CONFIG_ABORT)) {
     config_printhelp(Config_Params, sizeofArray(Config_Params), CONFIG_SECTIONNAME);
