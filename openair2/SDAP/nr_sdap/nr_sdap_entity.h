@@ -119,7 +119,7 @@ typedef struct nr_sdap_entity_s {
                     int size);
 
   /* List of entities */
-  struct nr_sdap_entity_s *next_entity;
+  pthread_mutex_t mutex;
 } nr_sdap_entity_t;
 
 /* QFI to DRB Mapping Related Function */
@@ -187,7 +187,7 @@ void nr_sdap_release_drb(ue_id_t ue_id, int drb_id, int pdusession_id);
  * @param[in] pdusession_id Unique identifier for the Packet Data Unit Session. ID Range [0, 256].
  * @return                  True, if successfully deleted entity, false otherwise.
  */
-bool nr_sdap_delete_entity(ue_id_t ue_id, int pdusession_id);
+bool nr_sdap_delete_entity(ue_id_t ue_id, int pdusession_id, bool deleteIF);
 
 /**
  * @brief Function to delete all SDAP Entities based on the ue_id.
@@ -217,6 +217,7 @@ bool is_sdap_tx(bool is_gnb, NR_SDAP_Config_t *sdap_config);
 void nr_reconfigure_sdap_entity(NR_SDAP_Config_t *sdap_config, ue_id_t ue_id, int pdusession_id, int drb_id);
 
 void set_qfi(uint8_t qfi, uint8_t pduid, ue_id_t ue_id);
-bool nr_sdap_get_first_ue_id(ue_id_t *ret);
-void remove_ue_ip_if(ue_id_t ue_id, int pdusession_id);
+void nr_sdap_lock(nr_sdap_entity_t *ent);
+void nr_sdap_unlock(nr_sdap_entity_t *ent);
+void sdap_init(void);
 #endif
