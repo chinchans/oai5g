@@ -718,6 +718,7 @@ typedef struct PHY_VARS_gNB_s {
   tpool_t threadPool;
   int nbSymb;
   int num_pusch_symbols_per_thread;
+  int dmrs_num_antennas_per_thread;
   pthread_t L1_rx_thread;
   int L1_rx_thread_core;
   pthread_t L1_tx_thread;
@@ -741,6 +742,20 @@ typedef struct puschSymbolProc_s {
   int16_t *s;
   uint32_t nvar;
 } puschSymbolProc_t;
+
+typedef struct ulAntennaProc_s {
+  PHY_VARS_gNB *gNB;
+  unsigned char Ns;
+  int nl;
+  unsigned short p;
+  unsigned char symbol;
+  int ul_id;
+  unsigned short bwp_start_subcarrier;
+  nfapi_nr_pusch_pdu_t *pusch_pdu;
+  int *max_ch;
+  uint32_t *nvar;
+  int numAntennas;
+} ulAntennaProc_t;
 
 struct puschSymbolReqId {
   uint16_t ulsch_id;
