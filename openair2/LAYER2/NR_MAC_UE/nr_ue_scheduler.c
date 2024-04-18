@@ -54,6 +54,7 @@
 
 #include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
 #include "LAYER2/RLC/rlc.h"
+#include "RRC/NR_UE/rrc_proto.h"
 
 //#define SRS_DEBUG
 
@@ -143,6 +144,11 @@ static void trigger_regular_bsr(NR_UE_MAC_INST_t *mac, NR_LogicalChannelIdentity
 
 void update_mac_timers(NR_UE_MAC_INST_t *mac)
 {
+  if (mac->data_inactivity_timer) {
+    bool inactivity_timer_expired = nr_timer_tick(mac->data_inactivity_timer);
+    if (inactivity_timer_expired)
+      nr_mac_rrc_inactivity_timer_ind(mac->ue_id);
+  }
   nr_timer_tick(&mac->ra.contention_resolution_timer);
   for (int j = 0; j < NR_MAX_SR_ID; j++)
     nr_timer_tick(&mac->scheduling_info.sr_info[j].prohibitTimer);
@@ -1323,6 +1329,10 @@ void nr_ue_ul_scheduler(NR_UE_MAC_INST_t *mac, nr_uplink_indication_t *ul_info)
             && (mac->state == UE_CONNECTED || (ra->ra_state == nrRA_WAIT_RAR && ra->cfra))) {
           // Getting IP traffic to be transmitted
           nr_ue_get_sdu(mac, cc_id, frame_tx, slot_tx, gNB_index, ulsch_input_buffer, TBS_bytes);
+          // start or restart dataInactivityTimer  if any MAC entity transmits a MAC SDU for DTCH logical channel,
+          // or DCCH logical channel
+          if (mac->data_inactivity_timer)
+            nr_timer_start(mac->data_inactivity_timer);
           mac_pdu_exist = 1;
         }
       }
