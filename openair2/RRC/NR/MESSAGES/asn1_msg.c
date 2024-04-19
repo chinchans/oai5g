@@ -735,9 +735,9 @@ int16_t do_RRCReconfiguration(const gNB_RRC_UE_t *UE,
 
     dl_dcch_msg.message.choice.c1->choice.rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration = ie;
 
-    if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
-      xer_fprint(stdout, &asn_DEF_NR_DL_DCCH_Message, (void *)&dl_dcch_msg);
-    }
+    // if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+    xer_fprint(stdout, &asn_DEF_NR_DL_DCCH_Message, (void *)&dl_dcch_msg);
+    // }
 
     enc_rval = uper_encode_to_buffer(&asn_DEF_NR_DL_DCCH_Message,
                                      NULL,
@@ -1093,88 +1093,7 @@ int do_RRCReestablishmentComplete(uint8_t *buffer, size_t buffer_size, int64_t r
   return((enc_rval.encoded+7)/8);
 }
 
-NR_MeasConfig_t *get_defaultMeasConfig(uint32_t ssb_arfcn, int band, int scs)
-{
-  NR_MeasConfig_t *mc = calloc(1, sizeof(*mc));
-  mc->measObjectToAddModList = calloc(1, sizeof(*mc->measObjectToAddModList));
-  mc->reportConfigToAddModList = calloc(1, sizeof(*mc->reportConfigToAddModList));
-
-  // Measurement Objects: Specifies what is to be measured. For NR and inter-RAT E-UTRA measurements, this may include
-  // cell-specific offsets, blacklisted cells to be ignored and whitelisted cells to consider for measurements.
-  NR_MeasObjectToAddMod_t *mo1 = calloc(1, sizeof(*mo1));
-  mo1->measObjectId = 1;
-  mo1->measObject.present = NR_MeasObjectToAddMod__measObject_PR_measObjectNR;
-  NR_MeasObjectNR_t *monr1 = calloc(1, sizeof(*monr1));
-  asn1cCallocOne(monr1->ssbFrequency, ssb_arfcn);
-  asn1cCallocOne(monr1->ssbSubcarrierSpacing, scs);
-  monr1->referenceSignalConfig.ssb_ConfigMobility = calloc(1, sizeof(*monr1->referenceSignalConfig.ssb_ConfigMobility));
-  monr1->referenceSignalConfig.ssb_ConfigMobility->deriveSSB_IndexFromCell = true;
-  monr1->absThreshSS_BlocksConsolidation = calloc(1, sizeof(*monr1->absThreshSS_BlocksConsolidation));
-  asn1cCallocOne(monr1->absThreshSS_BlocksConsolidation->thresholdRSRP, 36);
-  asn1cCallocOne(monr1->nrofSS_BlocksToAverage, 8);
-  monr1->smtc1 = calloc(1, sizeof(*monr1->smtc1));
-  monr1->smtc1->periodicityAndOffset.present = NR_SSB_MTC__periodicityAndOffset_PR_sf20;
-  monr1->smtc1->periodicityAndOffset.choice.sf20 = 2;
-  monr1->smtc1->duration = NR_SSB_MTC__duration_sf2;
-  monr1->quantityConfigIndex = 1;
-  monr1->ext1 = calloc(1, sizeof(*monr1->ext1));
-  asn1cCallocOne(monr1->ext1->freqBandIndicatorNR, band);
-  mo1->measObject.choice.measObjectNR = monr1;
-  asn1cSeqAdd(&mc->measObjectToAddModList->list, mo1);
-  
-  // Reporting Configuration: Specifies how reporting should be done. This could be periodic or event-triggered.
-  NR_ReportConfigToAddMod_t *rc = calloc(1, sizeof(*rc));
-  rc->reportConfigId = 1;
-  rc->reportConfig.present = NR_ReportConfigToAddMod__reportConfig_PR_reportConfigNR;
-
-  NR_PeriodicalReportConfig_t *prc = calloc(1, sizeof(*prc));
-  prc->rsType = NR_NR_RS_Type_ssb;
-  prc->reportInterval = NR_ReportInterval_ms1024;
-  prc->reportAmount = NR_PeriodicalReportConfig__reportAmount_infinity;
-  prc->reportQuantityCell.rsrp = true;
-  prc->reportQuantityCell.rsrq = true;
-  prc->reportQuantityCell.sinr = true;
-  prc->reportQuantityRS_Indexes = calloc(1, sizeof(*prc->reportQuantityRS_Indexes));
-  prc->reportQuantityRS_Indexes->rsrp = true;
-  prc->reportQuantityRS_Indexes->rsrq = true;
-  prc->reportQuantityRS_Indexes->sinr = true;
-  asn1cCallocOne(prc->maxNrofRS_IndexesToReport, 4);
-  prc->maxReportCells = 4;
-  prc->includeBeamMeasurements = true;
-
-  NR_ReportConfigNR_t *rcnr = calloc(1, sizeof(*rcnr));
-  rcnr->reportType.present = NR_ReportConfigNR__reportType_PR_periodical;
-  rcnr->reportType.choice.periodical = prc;
-
-
-  rc->reportConfig.choice.reportConfigNR = rcnr;
-  asn1cSeqAdd(&mc->reportConfigToAddModList->list, rc);
-
-  // Measurement ID: Identifies how to report measurements of a specific object. This is a many-to-many mapping: a
-  // measurement object could have multiple reporting configurations, a reporting configuration could apply to multiple
-  // objects. A unique ID is used for each object-to-report-config association. When UE sends a MeasurementReport
-  // message, a single ID and related measurements are included in the message.
-  mc->measIdToAddModList = calloc(1, sizeof(*mc->measIdToAddModList));
-  NR_MeasIdToAddMod_t *measid = calloc(1, sizeof(*measid));
-  measid->measId = 1;
-  measid->measObjectId = 1;
-  measid->reportConfigId = 1;
-  asn1cSeqAdd(&mc->measIdToAddModList->list, measid);
-
-  // Quantity Configuration: Specifies parameters for layer 3 filtering of measurements. Only after filtering, reporting
-  // criteria are evaluated. The formula used is F_n = (1-a)F_(n-1) + a*M_n, where M is the latest measurement, F is the
-  // filtered measurement, and ais based on configured filter coefficient.
-  mc->quantityConfig = calloc(1, sizeof(*mc->quantityConfig));
-  mc->quantityConfig->quantityConfigNR_List = calloc(1, sizeof(*mc->quantityConfig->quantityConfigNR_List));
-  NR_QuantityConfigNR_t *qcnr3 = calloc(1, sizeof(*qcnr3));
-  asn1cCallocOne(qcnr3->quantityConfigCell.ssb_FilterConfig.filterCoefficientRSRP, NR_FilterCoefficient_fc6);
-  asn1cCallocOne(qcnr3->quantityConfigCell.csi_RS_FilterConfig.filterCoefficientRSRP, NR_FilterCoefficient_fc6);
-  asn1cSeqAdd(&mc->quantityConfig->quantityConfigNR_List->list, qcnr3);
-
-  return mc;
-}
-
-static NR_ReportConfigToAddMod_t *prepare_periodic_event_report(const NR_PER_EVENT_t *per_event)
+static NR_ReportConfigToAddMod_t *prepare_periodic_event_report(const nr_per_event_t *per_event)
 {
   NR_ReportConfigToAddMod_t *rc = calloc(1, sizeof(*rc));
   rc->reportConfigId = 1;
@@ -1203,7 +1122,7 @@ static NR_ReportConfigToAddMod_t *prepare_periodic_event_report(const NR_PER_EVE
   return rc;
 }
 
-static NR_ReportConfigToAddMod_t *prepare_a2_event_report(const NR_A2_EVENT_t *a2_event)
+static NR_ReportConfigToAddMod_t *prepare_a2_event_report(const nr_a2_event_t *a2_event)
 {
   NR_ReportConfigToAddMod_t *rc_A2 = calloc(1, sizeof(*rc_A2));
   rc_A2->reportConfigId = 2;
@@ -1233,7 +1152,7 @@ static NR_ReportConfigToAddMod_t *prepare_a2_event_report(const NR_A2_EVENT_t *a
   return rc_A2;
 }
 
-static NR_ReportConfigToAddMod_t *prepare_a3_event_report(const NR_A3_EVENT_t *a3_event)
+static NR_ReportConfigToAddMod_t *prepare_a3_event_report(const nr_a3_event_t *a3_event)
 {
   NR_ReportConfigToAddMod_t *rc_A3 = calloc(1, sizeof(*rc_A3));
   rc_A3->reportConfigId = a3_event->cell_id == -1 ? 3 : a3_event->cell_id + 4; // 3 is default RC ID. So cellId(0) starts from 4
@@ -1262,17 +1181,40 @@ static NR_ReportConfigToAddMod_t *prepare_a3_event_report(const NR_A3_EVENT_t *a
   return rc_A3;
 }
 
+const nr_a3_event_t *get_a3_configuration(int nr_cellid)
+{
+  gNB_RRC_INST *rrc = RC.nrrrc[0];
+  nr_measurement_configuration_t *measurementConfiguration = &rrc->measurementConfiguration;
+  if (!measurementConfiguration->a3_event_list)
+    return NULL;
+
+  for (uint8_t i = 0; i < measurementConfiguration->a3_event_list->size; i++) {
+    nr_a3_event_t *a3_event = (nr_a3_event_t *)seq_arr_at(measurementConfiguration->a3_event_list, i);
+    if (a3_event->cell_id == nr_cellid)
+      return a3_event;
+  }
+
+  if (measurementConfiguration->is_default_a3_configuration_exists)
+    return get_a3_configuration(-1);
+
+  return NULL;
+}
+
 NR_MeasConfig_t *get_MeasConfig(uint32_t ssb_arfcn,
                                 int band,
                                 int scs,
                                 const nr_measurement_configuration_t *const measurementConfiguration,
-                                nr_neighbour_gnb_configuration_t **neighbourConfiguration)
+                                seq_arr_t *neighborConfiguration)
 {
-  if (!measurementConfiguration)
-    return NULL;
-
-  if (!measurementConfiguration->a2_event && !measurementConfiguration->per_event && !measurementConfiguration->a3_event_list[0]) {
+  if (!measurementConfiguration && !measurementConfiguration->a2_event && !measurementConfiguration->per_event
+      && !measurementConfiguration->a3_event_list) {
     LOG_D(NR_RRC, "NR Measurements are not configured in the conf file\n");
+    return NULL;
+  }
+
+  if (!measurementConfiguration->a2_event && !measurementConfiguration->per_event && measurementConfiguration->a3_event_list
+      && !neighborConfiguration) {
+    LOG_I(NR_RRC, "A2 and Periodical Events are off. A3 Can not be prepared without neighbors!\n");
     return NULL;
   }
 
@@ -1293,13 +1235,29 @@ NR_MeasConfig_t *get_MeasConfig(uint32_t ssb_arfcn,
     asn1cSeqAdd(&mc->reportConfigToAddModList->list, rc_A2);
   }
 
-  for (uint8_t nCell = 0; nCell < MAX_NUMBER_OF_NEIGHBOUR_GNBS; nCell++) {
-    const NR_A3_EVENT_t *const a3Event = measurementConfiguration->a3_event_list[nCell];
-    if (!a3Event)
-      continue;
+  if (neighborConfiguration && measurementConfiguration->a3_event_list && measurementConfiguration->a3_event_list->size > 0) {
+    /* Loop through neighbors and find related A3 configuration
+       If no related A3 but there is default add the default one.
+       If default one added once as a report, no need to add it again && duplication.
+    */
+    LOG_D(NR_RRC, "HO LOG: Preparing A3 Event Measurement Configuration!\n");
+    bool is_default_a3_added = false;
+    for (uint8_t neighborIdx = 0; neighborIdx < neighborConfiguration->size; neighborIdx++) {
+      const nr_neighbor_gnb_configuration_t *neighborCell =
+          (const nr_neighbor_gnb_configuration_t *)seq_arr_at(neighborConfiguration, neighborIdx);
+      if (!neighborCell || !neighborCell->isIntraFrequencyNeighbor)
+        continue;
 
-    NR_ReportConfigToAddMod_t *rc_A3 = prepare_a3_event_report(a3Event);
-    asn1cSeqAdd(&mc->reportConfigToAddModList->list, rc_A3);
+      const nr_a3_event_t *a3Event = get_a3_configuration(neighborCell->nrcell_id);
+      if (!a3Event || is_default_a3_added)
+        continue;
+
+      if (a3Event->cell_id == -1)
+        is_default_a3_added = true;
+
+      NR_ReportConfigToAddMod_t *rc_A3 = prepare_a3_event_report(a3Event);
+      asn1cSeqAdd(&mc->reportConfigToAddModList->list, rc_A3);
+    }
   }
 
   // Single Measurement Object since we support only intra frequency handover now.
@@ -1322,19 +1280,22 @@ NR_MeasConfig_t *get_MeasConfig(uint32_t ssb_arfcn,
   monr1->ext1 = calloc(1, sizeof(*monr1->ext1));
   asn1cCallocOne(monr1->ext1->freqBandIndicatorNR, band);
 
-  for (uint8_t nCell = 0; nCell < MAX_NUMBER_OF_NEIGHBOUR_GNBS; nCell++) {
-    const nr_neighbour_gnb_configuration_t *const neighbourCell = neighbourConfiguration[nCell];
-    if (!neighbourCell || !neighbourCell->isIntraFrequencyNeighbour)
-      continue;
+  if (neighborConfiguration && measurementConfiguration->a3_event_list) {
+    for (uint8_t nCell = 0; nCell < neighborConfiguration->size; nCell++) {
+      const nr_neighbor_gnb_configuration_t *neighborCell =
+          (const nr_neighbor_gnb_configuration_t *)seq_arr_at(neighborConfiguration, nCell);
+      if (!neighborCell || !neighborCell->isIntraFrequencyNeighbor)
+        continue;
 
-    LOG_D(NR_RRC, "HO LOG: Preparing Meas Config for neighbour Cell with the ID: %d\n", neighbourCell->physicalCellId);
-    if (monr1->cellsToAddModList == NULL) {
-      monr1->cellsToAddModList = calloc(1, sizeof(*monr1->cellsToAddModList));
+      LOG_D(NR_RRC, "HO LOG: Preparing Meas Config for neighbor Cell with the ID: %d\n", neighborCell->physicalCellId);
+      if (monr1->cellsToAddModList == NULL) {
+        monr1->cellsToAddModList = calloc(1, sizeof(*monr1->cellsToAddModList));
+      }
+
+      NR_CellsToAddMod_t *cell = calloc(1, sizeof(*cell));
+      cell->physCellId = neighborCell->physicalCellId;
+      ASN_SEQUENCE_ADD(&monr1->cellsToAddModList->list, cell);
     }
-
-    NR_CellsToAddMod_t *cell = calloc(1, sizeof(*cell));
-    cell->physCellId = neighbourCell->physicalCellId;
-    ASN_SEQUENCE_ADD(&monr1->cellsToAddModList->list, cell);
   }
 
   mo1->measObject.choice.measObjectNR = monr1;

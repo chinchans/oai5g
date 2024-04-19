@@ -141,6 +141,42 @@ static void freeDRBlist(NR_DRB_ToAddModList_t *list)
   return;
 }
 
+const neighbor_cell_configuration_t *get_neighbor_config(int serving_cell_nr_cellid)
+{
+  const gNB_RRC_INST *rrc = RC.nrrrc[0];
+  seq_arr_t *neighbor_cell_configuration = rrc->neighbor_cell_configuration;
+  if (!neighbor_cell_configuration)
+    return NULL;
+
+  for (int cellIdx = 0; cellIdx < neighbor_cell_configuration->size; cellIdx++) {
+    neighbor_cell_configuration_t *neighbor_config =
+        (neighbor_cell_configuration_t *)seq_arr_at(neighbor_cell_configuration, cellIdx);
+    if (neighbor_config->nr_cell_id == serving_cell_nr_cellid)
+      return neighbor_config;
+  }
+  return NULL;
+}
+
+const nr_neighbor_gnb_configuration_t *get_neighbor_cell_information(int serving_cell_nr_cellid, int neighbor_cell_phy_id)
+{
+  const gNB_RRC_INST *rrc = RC.nrrrc[0];
+  seq_arr_t *neighbor_cell_configuration = rrc->neighbor_cell_configuration;
+  for (int cellIdx = 0; cellIdx < neighbor_cell_configuration->size; cellIdx++) {
+    neighbor_cell_configuration_t *neighbor_config =
+        (neighbor_cell_configuration_t *)seq_arr_at(neighbor_cell_configuration, cellIdx);
+    if (!neighbor_config)
+      continue;
+
+    for (int neighborIdx = 0; neighborIdx < neighbor_config->neighbor_cells->size; neighborIdx++) {
+      nr_neighbor_gnb_configuration_t *neighbor =
+          (nr_neighbor_gnb_configuration_t *)seq_arr_at(neighbor_config->neighbor_cells, neighborIdx);
+      if (neighbor != NULL && neighbor->physicalCellId == neighbor_cell_phy_id)
+        return neighbor;
+    }
+  }
+  return NULL;
+}
+
 typedef struct deliver_dl_rrc_message_data_s {
   const gNB_RRC_INST *rrc;
   f1ap_dl_rrc_message_t *dl_rrc;
@@ -513,7 +549,12 @@ static void rrc_gNB_generate_defaultRRCReconfiguration(const protocol_ctxt_t *co
     /* we cannot calculate the default measurement config without MIB&SIB1, as
      * we don't know the DU's SSB ARFCN */
     uint32_t ssb_arfcn = get_ssb_arfcn(cell_info, du->mib, du->sib1);
-    measconfig = get_MeasConfig(ssb_arfcn, band, scs, &rrc->measurementConfiguration, rrc->neighbourConfiguration);
+    const neighbor_cell_configuration_t *neighbor_config = get_neighbor_config(cell_info->nr_cellid);
+    seq_arr_t *neighbor_cells = NULL;
+    if (neighbor_config)
+      neighbor_cells = neighbor_config->neighbor_cells;
+
+    measconfig = get_MeasConfig(ssb_arfcn, band, scs, &rrc->measurementConfiguration, neighbor_cells);
   }
 
   if (measconfig != NULL) {
@@ -1242,27 +1283,6 @@ fallback_rrc_setup:
   return;
 }
 
-static const NR_A3_EVENT_t *get_a3_configuration(int phyCellId)
-{
-  gNB_RRC_INST *rrc = RC.nrrrc[0];
-  int nrcell_id = -1; // If no specific A3, use default (-1)
-  nr_neighbour_gnb_configuration_t **neigbor_gnb_list = rrc->neighbourConfiguration;
-
-  for (uint8_t nCell = 0; nCell < MAX_NUMBER_OF_NEIGHBOUR_GNBS; nCell++) {
-    const nr_neighbour_gnb_configuration_t *neighbor = neigbor_gnb_list[nCell];
-    if (phyCellId == neighbor->physicalCellId)
-      nrcell_id = neighbor->nrcell_id;
-  }
-
-  NR_A3_EVENT_t **a3_event_list = rrc->measurementConfiguration.a3_event_list;
-  for (uint8_t nCell = 0; nCell < MAX_NUMBER_OF_NEIGHBOUR_GNBS; nCell++) {
-    if (a3_event_list[nCell]->cell_id == nrcell_id)
-      return a3_event_list[nCell];
-  }
-
-  return a3_event_list[0];
-}
-
 static void process_Periodical_Measurement_Report(rrc_gNB_ue_context_t *ue_context, NR_MeasurementReport_t *measurementReport)
 {
   // LOG_I(NR_RRC, "Periodical Event Report! Do Nothing for now...\n");
@@ -1283,7 +1303,8 @@ static void process_Event_Based_Measurement_Report(NR_ReportConfigNR_t *report, 
   NR_EventTriggerConfig_t *event_triggered = report->reportType.choice.eventTriggered;
 
   int servingCellRSRP = 0;
-  int neighbourCellRSRP = 0;
+  int neighborCellRSRP = 0;
+  int servingCellId = -1;
 
   switch (event_triggered->eventId.present) {
     case NR_EventTriggerConfig__eventId_PR_eventA2:
@@ -1291,12 +1312,12 @@ static void process_Event_Based_Measurement_Report(NR_ReportConfigNR_t *report, 
       break;
 
     case NR_EventTriggerConfig__eventId_PR_eventA3: {
-      LOG_I(NR_RRC, "\nHO LOG: Event A3 Report - Neighbour Becomes Better than Serving!\n");
+      LOG_I(NR_RRC, "\nHO LOG: Event A3 Report - Neighbor Becomes Better than Serving!\n");
       const NR_MeasResults_t *measResults = &measurementReport->criticalExtensions.choice.measurementReport->measResults;
 
       for (int serving_cell_idx = 0; serving_cell_idx < measResults->measResultServingMOList.list.count; serving_cell_idx++) {
         const NR_MeasResultServMO_t *meas_result_serv_MO = measResults->measResultServingMOList.list.array[serving_cell_idx];
-
+        servingCellId = *(meas_result_serv_MO->measResultServingCell.physCellId);
         if (meas_result_serv_MO->measResultServingCell.measResult.cellResults.resultsSSB_Cell) {
           servingCellRSRP = *(meas_result_serv_MO->measResultServingCell.measResult.cellResults.resultsSSB_Cell->rsrp) - 157;
         } else {
@@ -1314,27 +1335,32 @@ static void process_Event_Based_Measurement_Report(NR_ReportConfigNR_t *report, 
       const NR_MeasResultListNR_t *measResultListNR = measResults->measResultNeighCells->choice.measResultListNR;
       for (int neigh_meas_idx = 0; neigh_meas_idx < measResultListNR->list.count; neigh_meas_idx++) {
         const NR_MeasResultNR_t *meas_result_neigh_cell = (measResultListNR->list.array[neigh_meas_idx]);
-        const int neighbourCellId = *(meas_result_neigh_cell->physCellId);
+        const int neighborCellId = *(meas_result_neigh_cell->physCellId);
 
         // Table 10.1.6.1-1: SS-RSRP and CSI-RSRP measurement report mapping
         if (meas_result_neigh_cell->measResult.cellResults.resultsSSB_Cell) {
-          neighbourCellRSRP = *(meas_result_neigh_cell->measResult.cellResults.resultsSSB_Cell->rsrp) - 157;
+          neighborCellRSRP = *(meas_result_neigh_cell->measResult.cellResults.resultsSSB_Cell->rsrp) - 157;
         } else {
-          neighbourCellRSRP = *(meas_result_neigh_cell->measResult.cellResults.resultsCSI_RS_Cell->rsrp) - 157;
+          neighborCellRSRP = *(meas_result_neigh_cell->measResult.cellResults.resultsCSI_RS_Cell->rsrp) - 157;
         }
 
-        LOG_I(NR_RRC,
-              "HO LOG: Measurement Report has came for the neighbour: %d with RSRP: %d\n",
-              neighbourCellId,
-              neighbourCellRSRP);
+        LOG_I(NR_RRC, "HO LOG: Measurement Report has came for the neighbor: %d with RSRP: %d\n", neighborCellId, neighborCellRSRP);
 
-        const NR_A3_EVENT_t *a3_event_of_neighbor = get_a3_configuration((int)*meas_result_neigh_cell->physCellId);
-        if (!a3_event_of_neighbor)
-          break;
-
-        // Additional check - This part can be modified according to additional cell specific Handover Margin
-        if (a3_event_of_neighbor->a3_offset + a3_event_of_neighbor->hysteresis < (neighbourCellRSRP - servingCellRSRP))
-          LOG_D(NR_RRC, "Neighbour Cell is Better than Serving Cell\n");
+        const f1ap_served_cell_info_t *neighbor_cell_du_context = get_cell_information_by_phycellId(neighborCellId);
+        const f1ap_served_cell_info_t *serving_cell_du_context = get_cell_information_by_phycellId(servingCellId);
+        const nr_neighbor_gnb_configuration_t *neighbor =
+            get_neighbor_cell_information(serving_cell_du_context->nr_cellid, neighborCellId);
+        // CU does not have f1 connection with neighbor cell context. So  check does serving cell has this phyCellId as a neighbor.
+        if (!neighbor_cell_du_context && neighbor) {
+          // No F1 connection but static neighbor configuration is available
+          const nr_a3_event_t *a3_event_configuration = get_a3_configuration(neighbor->nrcell_id);
+          // Additional check - This part can be modified according to additional cell specific Handover Margin
+          if (a3_event_configuration
+              && ((a3_event_configuration->a3_offset + a3_event_configuration->hysteresis)
+                  < (neighborCellRSRP - servingCellRSRP))) {
+            LOG_D(NR_RRC, "HO LOG: Trigger N2 HO for the neighbor gnb: %u cell: %lu\n", neighbor->gNB_ID, neighbor->nrcell_id);
+          }
+        }
       }
 
     } break;

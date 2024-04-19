@@ -226,16 +226,24 @@ typedef enum {
 /*-------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*-------------------------------------------------------------------------------------------------------------------------------------------------*/
 
-/* Neighbour Cell Configurations*/
-#define GNB_CONFIG_STRING_NEIGHBOUR_CELL_LIST "neighbour_cell_configuration"
+/* Neighbor Cell Configurations*/
+#define GNB_CONFIG_STRING_NEIGHBOR_LIST "neighbor_list"
+// clang-format off
+#define GNB_NEIGHBOR_LIST_PARAM_LIST {                                                                  \
+/*   optname                                                  helpstr                                 paramflags                    XXXptr     def val          type    numelt */ \
+  {GNB_CONFIG_STRING_NRCELLID,                              "cell nrCell Id which has neighbors",              PARAMFLAG_MANDATORY,           .u64ptr=NULL, .defint64val=0,               TYPE_UINT64,    0},    \
+  {GNB_CONFIG_STRING_NEIGHBOR_CELL_PHYSICAL_ID,            "neighbor cell physical id",            PARAMFLAG_MANDATORY,           .uptr=NULL,   .defuintval=0,                TYPE_UINT,      0},    \
+}
+// clang-format on
+#define GNB_CONFIG_STRING_NEIGHBOR_CELL_LIST "neighbor_cell_configuration"
 
-#define GNB_CONFIG_STRING_NEIGHBOUR_GNB_ID "gNB_ID"
-#define GNB_CONFIG_STRING_NEIGHBOUR_NR_CELLID "nr_cellid"
-#define GNB_CONFIG_STRING_NEIGHBOUR_CELL_PHYSICAL_ID "physical_cellId"
-#define GNB_CONFIG_STRING_NEIGHBOUR_CELL_ABS_FREQ_SSB "absoluteFrequencySSB"
-#define GNB_CONFIG_STRING_NEIGHBOUR_CELL_SCS "subcarrierSpacing"
-#define GNB_CONFIG_STRING_NEIGHBOUR_TRACKING_ARE_CODE "tracking_area_code"
-#define GNB_CONFIG_STRING_NEIGHBOUR_PLMN "plmn"
+#define GNB_CONFIG_STRING_NEIGHBOR_GNB_ID "gNB_ID"
+#define GNB_CONFIG_STRING_NEIGHBOR_NR_CELLID "nr_cellid"
+#define GNB_CONFIG_STRING_NEIGHBOR_CELL_PHYSICAL_ID "physical_cellId"
+#define GNB_CONFIG_STRING_NEIGHBOR_CELL_ABS_FREQ_SSB "absoluteFrequencySSB"
+#define GNB_CONFIG_STRING_NEIGHBOR_CELL_SCS "subcarrierSpacing"
+#define GNB_CONFIG_STRING_NEIGHBOR_TRACKING_ARE_CODE "tracking_area_code"
+#define GNB_CONFIG_STRING_NEIGHBOR_PLMN "plmn"
 
 #define GNB_CONFIG_N_CELL_GNB_ID_IDX 0
 #define GNB_CONFIG_N_CELL_NR_CELLID_IDX 1
@@ -244,14 +252,14 @@ typedef enum {
 #define GNB_CONFIG_N_CELL_SCS_IDX 4
 #define GNB_CONFIG_N_CELL_TAC_IDX 5
 // clang-format off
-#define GNBNEIGHBOURCELLPARAMS_DESC {                                                                  \
+#define GNBNEIGHBORCELLPARAMS_DESC {                                                                  \
 /*   optname                                                  helpstr                                 paramflags                    XXXptr     def val          type    numelt */ \
-  {GNB_CONFIG_STRING_GNB_ID,                                "neighbour cell's gNB ID",               PARAMFLAG_MANDATORY,           .uptr=NULL,   .defintval=0,                 TYPE_UINT,      0},    \
-  {GNB_CONFIG_STRING_NRCELLID,                              "neighbour cell nrCell Id",              PARAMFLAG_MANDATORY,           .u64ptr=NULL, .defint64val=0,               TYPE_UINT64,    0},    \
-  {GNB_CONFIG_STRING_NEIGHBOUR_CELL_PHYSICAL_ID,            "neighbour cell physical id",            PARAMFLAG_MANDATORY,           .uptr=NULL,   .defuintval=0,                TYPE_UINT,      0},    \
-  {GNB_CONFIG_STRING_NEIGHBOUR_CELL_ABS_FREQ_SSB,           "neighbour cell abs freq ssb",           PARAMFLAG_MANDATORY,           .i64ptr=NULL, .defint64val=0,               TYPE_INT64,     0},    \
-  {GNB_CONFIG_STRING_NEIGHBOUR_CELL_SCS,                    "neighbour cell scs",                    PARAMFLAG_MANDATORY,           .uptr=NULL,   .defuintval=0,                TYPE_UINT,      0},    \
-  {GNB_CONFIG_STRING_NEIGHBOUR_TRACKING_ARE_CODE,           "neighbour cell tracking area",          PARAMFLAG_MANDATORY,           .uptr=NULL,   .defuintval=0,                TYPE_UINT,      0},    \
+  {GNB_CONFIG_STRING_GNB_ID,                                "neighbor cell's gNB ID",               PARAMFLAG_MANDATORY,           .uptr=NULL,   .defintval=0,                 TYPE_UINT,      0},    \
+  {GNB_CONFIG_STRING_NRCELLID,                              "neighbor cell nrCell Id",              PARAMFLAG_MANDATORY,           .u64ptr=NULL, .defint64val=0,               TYPE_UINT64,    0},    \
+  {GNB_CONFIG_STRING_NEIGHBOR_CELL_PHYSICAL_ID,            "neighbor cell physical id",            PARAMFLAG_MANDATORY,           .uptr=NULL,   .defuintval=0,                TYPE_UINT,      0},    \
+  {GNB_CONFIG_STRING_NEIGHBOR_CELL_ABS_FREQ_SSB,           "neighbor cell abs freq ssb",           PARAMFLAG_MANDATORY,           .i64ptr=NULL, .defint64val=0,               TYPE_INT64,     0},    \
+  {GNB_CONFIG_STRING_NEIGHBOR_CELL_SCS,                    "neighbor cell scs",                    PARAMFLAG_MANDATORY,           .uptr=NULL,   .defuintval=0,                TYPE_UINT,      0},    \
+  {GNB_CONFIG_STRING_NEIGHBOR_TRACKING_ARE_CODE,           "neighbor cell tracking area",          PARAMFLAG_MANDATORY,           .uptr=NULL,   .defuintval=0,                TYPE_UINT,      0},    \
 }
 // clang-format on
 
@@ -273,7 +281,7 @@ typedef enum {
 // clang-format off
 #define MEASUREMENT_A3_GLOBALPARAMS_DESC                                                                                      \
   {                                                                                                                               \
-        {MEASUREMENT_EVENTS_CELL_ID, "neighbour cellId for A3Report", 0, .i64ptr = NULL, .defint64val = -1, TYPE_INT64, 0},           \
+        {MEASUREMENT_EVENTS_CELL_ID, "neighbor cellId for A3Report", 0, .i64ptr = NULL, .defint64val = -1, TYPE_INT64, 0},           \
         {MEASUREMENT_EVENTS_TIME_TO_TRIGGER, "a3 time to trigger", 0, .i64ptr = NULL, .defint64val = 1, TYPE_INT64, 0}, \
         {MEASUREMENT_EVENTS_OFFSET, "a3 offset", 0, .i64ptr = NULL, .defint64val = 60, TYPE_INT64, 0},                  \
         {MEASUREMENT_EVENTS_HYSTERESIS, "a3 hysteresis", 0, .i64ptr = NULL, .defint64val = 0, TYPE_INT64, 0},           \

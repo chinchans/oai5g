@@ -27,7 +27,7 @@
 #include "openair2/F1AP/f1ap_common.h"
 #include "openair2/F1AP/f1ap_ids.h"
 #include "executables/softmodem-common.h"
-
+#include "common/utils/ds/seq_arr.h"
 
 static int du_compare(const nr_rrc_du_container_t *a, const nr_rrc_du_container_t *b)
 {
@@ -47,6 +47,37 @@ static bool rrc_gNB_plmn_matches(const gNB_RRC_INST *rrc, const f1ap_served_cell
   return conf->num_plmn == 1 // F1 supports only one
     && conf->mcc[0] == info->plmn.mcc
     && conf->mnc[0] == info->plmn.mnc;
+}
+
+static int get_cell_position_inside_neighbor_list(const gNB_RRC_INST *rrc, const f1ap_served_cell_info_t *cell_info)
+{
+  if (!rrc->neighbor_cell_configuration)
+    return -1;
+
+  for (int idx = 0; idx < rrc->neighbor_cell_configuration->size; idx++) {
+    const neighbor_cell_configuration_t *neighbor_cell_config =
+        (neighbor_cell_configuration_t *)seq_arr_at(rrc->neighbor_cell_configuration, idx);
+    if (cell_info->nr_cellid == neighbor_cell_config->nr_cell_id) {
+      return idx;
+    }
+  }
+  return -1;
+}
+
+const struct f1ap_served_cell_info_t *get_cell_information_by_phycellId(int phyCellId)
+{
+  gNB_RRC_INST *rrc = RC.nrrrc[0];
+  nr_rrc_du_container_t *it = NULL;
+  RB_FOREACH (it, rrc_du_tree, &rrc->dus) {
+    for (int cellIdx = 0; cellIdx < it->setup_req->num_cells_available; cellIdx++) {
+      const f1ap_served_cell_info_t *cell_info = &(it->setup_req->cell[cellIdx].info);
+      if (cell_info->nr_pci == phyCellId) {
+        LOG_D(NR_RRC, "HO LOG: Found cell with phyCellId %d\n", phyCellId);
+        return cell_info;
+      }
+    }
+  }
+  return NULL;
 }
 
 void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *req, sctp_assoc_t assoc_id)
@@ -172,14 +203,26 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *req, sctp_assoc_t assoc_id)
   };
 
   if (du->mib != NULL && du->sib1 != NULL) {
-    int scs = get_ssb_scs(cell_info);
-    uint32_t ssb_arfcn = get_ssb_arfcn(cell_info, du->mib, du->sib1);
+    int pos = get_cell_position_inside_neighbor_list(rrc, cell_info);
+    if (pos != -1) {
+      LOG_D(NR_RRC, "HO LOG: Cell: %lu has neighbor cell configuration!\n", cell_info->nr_cellid);
+      int scs = get_ssb_scs(cell_info);
+      uint32_t ssb_arfcn = get_ssb_arfcn(cell_info, du->mib, du->sib1);
+      neighbor_cell_configuration_t *neighbor_cell_config =
+          (neighbor_cell_configuration_t *)seq_arr_at(rrc->neighbor_cell_configuration, pos);
 
-    for (uint8_t nCell = 0; nCell < MAX_NUMBER_OF_NEIGHBOUR_GNBS; nCell++) {
-      nr_neighbour_gnb_configuration_t *neighbourCell = rrc->neighbourConfiguration[nCell];
-      if (neighbourCell != NULL && ssb_arfcn == neighbourCell->absoluteFrequencySSB && scs == neighbourCell->subcarrierSpacing) {
-        LOG_E(NR_RRC, "Intra Frequency Neighbour is found!\n");
-        neighbourCell->isIntraFrequencyNeighbour = true;
+      seq_arr_t *cell_neighbor_list = neighbor_cell_config->neighbor_cells;
+      for (uint8_t neighborIdx = 0; neighborIdx < cell_neighbor_list->size; neighborIdx++) {
+        nr_neighbor_gnb_configuration_t *neighbor_cell =
+            (nr_neighbor_gnb_configuration_t *)seq_arr_at(cell_neighbor_list, neighborIdx);
+        if (neighbor_cell != NULL && ssb_arfcn == neighbor_cell->absoluteFrequencySSB && scs == neighbor_cell->subcarrierSpacing) {
+          LOG_D(NR_RRC,
+                "HO LOG DU %d cell %lu: found intra frequency neighbor %lu!\n",
+                du->assoc_id,
+                cell_info->nr_cellid,
+                neighbor_cell->nrcell_id);
+          neighbor_cell->isIntraFrequencyNeighbor = true;
+        }
       }
     }
   }
