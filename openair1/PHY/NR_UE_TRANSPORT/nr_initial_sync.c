@@ -225,7 +225,7 @@ void nr_scan_ssb(void *arg)
 #endif
     /* check that SSS/PBCH block is continuous inside the received buffer */
     if (ssbInfo->ssbOffset + NR_N_SYMBOLS_SSB * (fp->ofdm_symbol_size + fp->nb_prefix_samples) >= fp->samples_per_frame) {
-      LOG_I(PHY, "Can't try to decode SSS from PSS position, will retry (PSS circular buffer wrapping): sync_pos %d\n", sync_pos);
+      LOG_D(PHY, "Can't try to decode SSS from PSS position, will retry (PSS circular buffer wrapping): sync_pos %d\n", sync_pos);
       continue;
     }
 

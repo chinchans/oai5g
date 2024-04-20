@@ -427,7 +427,7 @@ int pss_synchro_nr(const c16_t **rxdata,
 
   #ifndef NR_UNIT_TEST
 
-  LOG_I(PHY,"PSS execution duration %4d microseconds \n", duration_ms);
+  LOG_D(PHY,"PSS execution duration %4d microseconds \n", duration_ms);
 
   #endif
 
@@ -621,7 +621,7 @@ static int pss_search_time_nr(const c16_t **rxdata,
 
   *nid2 = pss_source;
 
-  LOG_I(PHY,
+  LOG_D(PHY,
         "[UE] nr_synchro_time: Sync source (nid2) = %d, Peak found at pos %d, val = %ld (%d dB power over signal avg %d dB), ffo "
         "%lf\n",
         pss_source,
