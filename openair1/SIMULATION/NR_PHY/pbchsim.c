@@ -494,7 +494,7 @@ int main(int argc, char **argv)
   phy_init_nr_gNB(gNB);
   frame_parms->ssb_start_subcarrier = 12 * gNB->gNB_config.ssb_table.ssb_offset_point_a.value + ssb_subcarrier_offset;
 
-  uint8_t n_hf = 0;
+  int n_hf = 0;
   int cyclic_prefix_type = NFAPI_CP_NORMAL;
 
   double fs=0, eps;
@@ -608,7 +608,7 @@ int main(int argc, char **argv)
     exit(-1);
   }
 
-  nr_gold_pbch(UE);
+  nr_gold_pbch(UE->nr_gold_pbch, Nid_cell, frame_parms->Lmax);
 
   processingData_L1tx_t msgDataTx;
   // generate signal
@@ -788,8 +788,9 @@ int main(int argc, char **argv)
         for (int i = UE->symbol_offset + 1; i < UE->symbol_offset + 4; i++) {
           nr_slot_fep(UE, frame_parms, &proc, i % frame_parms->symbols_per_slot, rxdataF, link_type_dl);
 
-          nr_pbch_channel_estimation(UE,
-                                     &UE->frame_parms,
+          nr_pbch_channel_estimation(&UE->frame_parms,
+                                     &UE->SL_UE_PHY_PARAMS,
+                                     UE->nr_gold_pbch,
                                      estimateSz,
                                      dl_ch_estimates,
                                      dl_ch_estimates_time,
@@ -798,12 +799,15 @@ int main(int argc, char **argv)
                                      i - (UE->symbol_offset + 1),
                                      ssb_index % 8,
                                      n_hf,
+                                     frame_parms->ssb_start_subcarrier,
                                      rxdataF,
                                      false,
                                      frame_parms->Nid_cell);
         }
         fapiPbch_t result;
-        ret = nr_rx_pbch(UE, &proc, estimateSz, dl_ch_estimates, frame_parms, ssb_index % 8, &result, rxdataF);
+        int ret_ssb_idx;
+        int ret_symbol_offset;
+        ret = nr_rx_pbch(UE, &proc, true, estimateSz, dl_ch_estimates, frame_parms, ssb_index % 8, frame_parms->ssb_start_subcarrier, Nid_cell, &result, &n_hf, &ret_ssb_idx, &ret_symbol_offset, rxdataF);
 
         if (ret == 0) {
           // UE->rx_ind.rx_indication_body->mib_pdu.ssb_index;  //not yet detected automatically
