@@ -493,17 +493,6 @@ static void rrc_gNB_process_RRCSetupComplete(const protocol_ctxt_t *const ctxt_p
 #endif
 }
 
-static void clone_MeasConfig(const NR_MeasConfig_t *orig, rrc_gNB_ue_context_t *ue_context_pP)
-{
-  uint8_t buf[16636];
-  asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_MeasConfig, NULL, orig, buf, sizeof(buf));
-  AssertFatal(enc_rval.encoded > 0, "could not clone Meas Config: problem while encoding\n");
-  asn_dec_rval_t dec_rval =
-      uper_decode(NULL, &asn_DEF_NR_MeasConfig, (void **)&ue_context_pP->ue_context.measConfig, buf, enc_rval.encoded, 0, 0);
-  AssertFatal(dec_rval.code == RC_OK && dec_rval.consumed == enc_rval.encoded,
-              "could not clone NR_MeasConfig_t: problem while decoding\n");
-}
-
 //-----------------------------------------------------------------------------
 static void rrc_gNB_generate_defaultRRCReconfiguration(const protocol_ctxt_t *const ctxt_pP, rrc_gNB_ue_context_t *ue_context_pP)
 //-----------------------------------------------------------------------------
@@ -557,10 +546,7 @@ static void rrc_gNB_generate_defaultRRCReconfiguration(const protocol_ctxt_t *co
     measconfig = get_MeasConfig(ssb_arfcn, band, scs, &rrc->measurementConfiguration, neighbor_cells);
   }
 
-  if (measconfig != NULL) {
-    free_MeasConfig(ue_p->measConfig);
-    clone_MeasConfig(measconfig, ue_context_pP);
-  }
+  ue_p->measConfig = measconfig;
 
   NR_SRB_ToAddModList_t *SRBs = createSRBlist(ue_p, false);
   NR_DRB_ToAddModList_t *DRBs = createDRBlist(ue_p, false);
@@ -578,7 +564,6 @@ static void rrc_gNB_generate_defaultRRCReconfiguration(const protocol_ctxt_t *co
                                    dedicatedNAS_MessageList,
                                    ue_p->masterCellGroup);
   AssertFatal(size > 0, "cannot encode RRCReconfiguration in %s()\n", __func__);
-  free_MeasConfig(measconfig);
   freeSRBlist(SRBs);
   freeDRBlist(DRBs);
 
@@ -2048,6 +2033,7 @@ static void rrc_delete_ue_data(gNB_RRC_UE_t *UE)
   ASN_STRUCT_FREE(asn_DEF_NR_UE_NR_Capability, UE->UE_Capability_nr);
   ASN_STRUCT_FREE(asn_DEF_NR_CellGroupConfig, UE->masterCellGroup);
   ASN_STRUCT_FREE(asn_DEF_NR_MeasResults, UE->measResults);
+  free_MeasConfig(UE->measConfig);
 }
 
 void rrc_remove_ue(gNB_RRC_INST *rrc, rrc_gNB_ue_context_t *ue_context_p)

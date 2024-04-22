@@ -80,6 +80,36 @@ const struct f1ap_served_cell_info_t *get_cell_information_by_phycellId(int phyC
   return NULL;
 }
 
+/**
+ * @brief Labels neighbor cells if they are intra frequency to prepare meas config only for intra frequency ho
+ * @param[in] rrc     Pointer to RRC instance
+ * @param[in] cell_info Pointer to cell information
+*/
+static void label_intra_frequency_neighbors(gNB_RRC_INST *rrc, nr_rrc_du_container_t *du, f1ap_served_cell_info_t *cell_info)
+{
+  int pos = get_cell_position_inside_neighbor_list(rrc, cell_info);
+  if (pos != -1) {
+    LOG_D(NR_RRC, "HO LOG: Cell: %lu has neighbor cell configuration!\n", cell_info->nr_cellid);
+    int scs = get_ssb_scs(cell_info);
+    uint32_t ssb_arfcn = get_ssb_arfcn(cell_info, du->mib, du->sib1);
+    neighbor_cell_configuration_t *neighbor_cell_config =
+        (neighbor_cell_configuration_t *)seq_arr_at(rrc->neighbor_cell_configuration, pos);
+
+    seq_arr_t *cell_neighbor_list = neighbor_cell_config->neighbor_cells;
+    for (uint8_t neighborIdx = 0; neighborIdx < cell_neighbor_list->size; neighborIdx++) {
+      nr_neighbor_gnb_configuration_t *neighbor_cell =
+          (nr_neighbor_gnb_configuration_t *)seq_arr_at(cell_neighbor_list, neighborIdx);
+      if (neighbor_cell != NULL && ssb_arfcn == neighbor_cell->absoluteFrequencySSB && scs == neighbor_cell->subcarrierSpacing) {
+        LOG_D(NR_RRC,
+              "HO LOG cell %lu: found intra frequency neighbor %lu!\n",
+              cell_info->nr_cellid,
+              neighbor_cell->nrcell_id);
+        neighbor_cell->isIntraFrequencyNeighbor = true;
+      }
+    }
+  }
+}
+
 void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *req, sctp_assoc_t assoc_id)
 {
   AssertFatal(assoc_id != 0, "illegal assoc_id == 0: should be -1 (monolithic) or >0 (split)\n");
@@ -202,30 +232,8 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *req, sctp_assoc_t assoc_id)
       .num_SI = 0,
   };
 
-  if (du->mib != NULL && du->sib1 != NULL) {
-    int pos = get_cell_position_inside_neighbor_list(rrc, cell_info);
-    if (pos != -1) {
-      LOG_D(NR_RRC, "HO LOG: Cell: %lu has neighbor cell configuration!\n", cell_info->nr_cellid);
-      int scs = get_ssb_scs(cell_info);
-      uint32_t ssb_arfcn = get_ssb_arfcn(cell_info, du->mib, du->sib1);
-      neighbor_cell_configuration_t *neighbor_cell_config =
-          (neighbor_cell_configuration_t *)seq_arr_at(rrc->neighbor_cell_configuration, pos);
-
-      seq_arr_t *cell_neighbor_list = neighbor_cell_config->neighbor_cells;
-      for (uint8_t neighborIdx = 0; neighborIdx < cell_neighbor_list->size; neighborIdx++) {
-        nr_neighbor_gnb_configuration_t *neighbor_cell =
-            (nr_neighbor_gnb_configuration_t *)seq_arr_at(cell_neighbor_list, neighborIdx);
-        if (neighbor_cell != NULL && ssb_arfcn == neighbor_cell->absoluteFrequencySSB && scs == neighbor_cell->subcarrierSpacing) {
-          LOG_D(NR_RRC,
-                "HO LOG DU %d cell %lu: found intra frequency neighbor %lu!\n",
-                du->assoc_id,
-                cell_info->nr_cellid,
-                neighbor_cell->nrcell_id);
-          neighbor_cell->isIntraFrequencyNeighbor = true;
-        }
-      }
-    }
-  }
+  if (du->mib != NULL && du->sib1 != NULL)
+    label_intra_frequency_neighbors(rrc, du, cell_info);
 
   f1ap_setup_resp_t resp = {.transaction_id = req->transaction_id,
                             .num_cells_to_activate = 1,

@@ -735,9 +735,9 @@ int16_t do_RRCReconfiguration(const gNB_RRC_UE_t *UE,
 
     dl_dcch_msg.message.choice.c1->choice.rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration = ie;
 
-    // if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
-    xer_fprint(stdout, &asn_DEF_NR_DL_DCCH_Message, (void *)&dl_dcch_msg);
-    // }
+    if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+      xer_fprint(stdout, &asn_DEF_NR_DL_DCCH_Message, (void *)&dl_dcch_msg);
+    }
 
     enc_rval = uper_encode_to_buffer(&asn_DEF_NR_DL_DCCH_Message,
                                      NULL,
@@ -1206,8 +1206,10 @@ NR_MeasConfig_t *get_MeasConfig(uint32_t ssb_arfcn,
                                 const nr_measurement_configuration_t *const measurementConfiguration,
                                 seq_arr_t *neighborConfiguration)
 {
-  if (!measurementConfiguration && !measurementConfiguration->a2_event && !measurementConfiguration->per_event
-      && !measurementConfiguration->a3_event_list) {
+  if (!measurementConfiguration)
+    return NULL;
+
+  if (!measurementConfiguration->a2_event && !measurementConfiguration->per_event && !measurementConfiguration->a3_event_list) {
     LOG_D(NR_RRC, "NR Measurements are not configured in the conf file\n");
     return NULL;
   }
