@@ -607,6 +607,7 @@ check_install_oai_software() {
 	liblapacke-dev \
 	libreadline-dev \
 	libconfig-dev \
+	libcap-dev \
 	libsctp-dev  \
 	libssl-dev  \
 	libtool  \
@@ -634,6 +635,7 @@ check_install_oai_software() {
       atlas-devel \
       pkgconfig \
       libconfig-devel \
+      libcap-devel \
       libffi-devel \
       lksctp-tools \
       lksctp-tools-devel \

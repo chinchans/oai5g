@@ -3,16 +3,20 @@ version: '3.8'
 services:
     gnb_mono_tdd:
         image: oai-gnb:latest
-        privileged: true
         container_name: sa-b200-gnb
+        cap_drop:
+            - ALL
+        cap_add:
+            - SYS_NICE
         ulimits:
           core: -1 # for core dumps
         environment:
             USE_B2XX: 'yes'
             USE_ADDITIONAL_OPTIONS: --sa --RUs.[0].sdr_addrs serial=30C51D4 --telnetsrv --telnetsrv.shrmod ci --continuous-tx --log_config.global_log_options level,nocolor,time,line_num,function -E
+        devices:
+            - /dev/bus/usb/:/dev/bus/usb/
         volumes:
             - ../../conf_files/gnb.sa.band78.106prb.usrpb200.sc-fdma.conf:/opt/oai-gnb/etc/gnb.conf
-            - /dev:/dev
         networks:
             public_net:
                 ipv4_address: 192.168.68.194

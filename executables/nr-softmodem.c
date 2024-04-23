@@ -622,7 +622,6 @@ int main( int argc, char **argv ) {
   mode = normal_txrx;
   memset(tx_max_power,0,sizeof(int)*MAX_NUM_CCs);
   logInit();
-  set_latency_target();
   printf("Reading in command-line options\n");
   get_options(uniqCfg);
 
@@ -632,6 +631,10 @@ int main( int argc, char **argv ) {
     fprintf(stderr,"Getting configuration failed\n");
     exit(-1);
   }
+
+  if (!has_cap_sys_nice())
+    LOG_W(UTIL,
+          "no SYS_NICE capability: cannot set thread priority and affinity, consider running with sudo for optimum performance\n");
 
   if (get_softmodem_params()->do_ra)
     AssertFatal(get_softmodem_params()->phy_test == 0,"RA and phy_test are mutually exclusive\n");

@@ -155,3 +155,21 @@ Please refer to this document [`channel_simulation.md`](../../openair1/SIMULATIO
 # Caveats
 
 There are issues in power control: txgain/rxgain setting is not supported.
+
+# How to improve performance
+
+Most importantly, note that the RFsimulator is not designed to be as performant
+as possible, nor is it designed to run close to real-time. It might run faster
+or slower than realtime, depending on CPU, and by design, as this allows to
+stop the entire system for inspection, e.g., using a debugger.
+
+Nevertheless, it is possible to tune some parameters to improve performance.
+Increase the kernel's default and maximum read and write socket buffer sizes to
+a high values, e.g., 134217728:
+
+```
+/sbin/sysctl -n -e -q -w net.core.rmem_default=134217728
+/sbin/sysctl -n -e -q -w net.core.rmem_max=134217728
+/sbin/sysctl -n -e -q -w net.core.wmem_default=134217728
+/sbin/sysctl -n -e -q -w net.core.wmem_max=134217728
+```

@@ -1,9 +1,12 @@
 services:
     oai-gnb:
         image: oai-gnb-aw2s:latest
-        privileged: true
         network_mode: "host"
         container_name: oai-gnb-aw2s
+        cap_drop:
+            - ALL
+        cap_add:
+            - SYS_NICE
         ulimits:
           core: -1 # for core dumps
         environment:

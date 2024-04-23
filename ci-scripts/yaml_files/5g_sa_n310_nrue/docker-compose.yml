@@ -2,9 +2,13 @@ version: '3.8'
 services:
     oai-nr-ue:
         image: oai-nr-ue:latest
-        privileged: true
         network_mode: host
         container_name: oai-nr-ue
+        cap_drop:
+            - ALL
+        cap_add:
+            - NET_ADMIN
+            - SYS_NICE
         ulimits:
           core: -1 # for core dumps
         #entrypoint: /bin/bash -c "sleep infinity"
