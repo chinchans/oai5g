@@ -42,8 +42,8 @@ int nr_max_pdcp_pdu_size(sdu_size_t sdu_size)
   return (sdu_size + LONG_PDCP_HEADER_SIZE + PDCP_INTEGRITY_SIZE);
 }
 
-static void nr_pdcp_entity_recv_pdu(nr_pdcp_entity_t *entity,
-                                    char *_buffer, int size)
+static int nr_pdcp_entity_recv_pdu(nr_pdcp_entity_t *entity,
+                                   char *_buffer, int size)
 {
   unsigned char    *buffer = (unsigned char *)_buffer;
   nr_pdcp_sdu_t    *sdu;
@@ -58,12 +58,12 @@ static void nr_pdcp_entity_recv_pdu(nr_pdcp_entity_t *entity,
 
   if (entity->entity_suspended) {
     LOG_W(PDCP, "PDCP entity %d is suspended. Quit RX procedure.\n", entity->rb_id);
-    return;
+    return -1;
   }
 
   if (size < 1) {
     LOG_E(PDCP, "bad PDU received (size = %d)\n", size);
-    return;
+    return -1;
   }
 
   if (entity->type != NR_PDCP_SRB && !(buffer[0] & 0x80)) {
@@ -105,7 +105,7 @@ static void nr_pdcp_entity_recv_pdu(nr_pdcp_entity_t *entity,
     entity->stats.rxpdu_dd_pkts++;
     entity->stats.rxpdu_dd_bytes += size;
 
-    return;
+    return -1;
   }
 
   rx_deliv_sn  = entity->rx_deliv & entity->sn_max;
@@ -147,7 +147,7 @@ static void nr_pdcp_entity_recv_pdu(nr_pdcp_entity_t *entity,
       entity->stats.rxpdu_dd_pkts++;
       entity->stats.rxpdu_dd_bytes += size;
 
-      return;
+      return -1;
     }
   }
 
@@ -157,7 +157,7 @@ static void nr_pdcp_entity_recv_pdu(nr_pdcp_entity_t *entity,
     entity->stats.rxpdu_dd_pkts++;
     entity->stats.rxpdu_dd_bytes += size;
 
-    return;
+    return -1;
   }
 
   sdu = nr_pdcp_new_sdu(rcvd_count,
@@ -201,6 +201,8 @@ static void nr_pdcp_entity_recv_pdu(nr_pdcp_entity_t *entity,
     entity->rx_reord = entity->rx_next;
     entity->t_reordering_start = entity->t_current;
   }
+
+  return 0;
 }
 
 static int nr_pdcp_entity_process_sdu(nr_pdcp_entity_t *entity,
