@@ -1168,18 +1168,6 @@ static uint8_t pack_stop_request(void *msg, uint8_t **ppWritePackedMsg, uint8_t 
   return pack_vendor_extension_tlv(pNfapiMsg->vendor_extension, ppWritePackedMsg, end, config);
 }
 
-uint8_t pack_nr_error_indication(void *msg, uint8_t **ppWritePackedMsg, uint8_t *end, nfapi_p4_p5_codec_config_t *config)
-{
-  nfapi_nr_error_indication_scf_t *pNfapiMsg = (nfapi_nr_error_indication_scf_t *)msg;
-  uint8_t retval = push16(pNfapiMsg->sfn, ppWritePackedMsg, end);
-  retval &= push16(pNfapiMsg->slot, ppWritePackedMsg, end);
-  retval &= push8(pNfapiMsg->message_id, ppWritePackedMsg, end);
-  retval &= push8(pNfapiMsg->error_code, ppWritePackedMsg, end);
-
-  retval &= pack_vendor_extension_tlv(pNfapiMsg->vendor_extension, ppWritePackedMsg, end, config);
-  return retval;
-}
-
 static uint8_t pack_measurement_request(void *msg, uint8_t **ppWritePackedMsg, uint8_t *end, nfapi_p4_p5_codec_config_t *config) {
   nfapi_measurement_request_t *pNfapiMsg = (nfapi_measurement_request_t *)msg;
   return( pack_tlv(NFAPI_MEASUREMENT_REQUEST_DL_RS_XTX_POWER_TAG, &(pNfapiMsg->dl_rs_tx_power), ppWritePackedMsg, end, &pack_uint16_tlv_value) &&
@@ -2100,17 +2088,6 @@ static uint8_t unpack_start_response(uint8_t **ppReadPackedMsg, uint8_t *end, vo
 static uint8_t unpack_stop_request(uint8_t **ppReadPackedMsg, uint8_t *end, void *msg, nfapi_p4_p5_codec_config_t *config) {
   nfapi_stop_request_t *pNfapiMsg = (nfapi_stop_request_t *)msg;
   return unpack_tlv_list(NULL, 0, ppReadPackedMsg, end, config, &(pNfapiMsg->vendor_extension));
-}
-
-uint8_t unpack_nr_error_indication(uint8_t **ppReadPackedMsg, uint8_t *end, void *msg, nfapi_p4_p5_codec_config_t *config)
-{
-  nfapi_nr_error_indication_scf_t *pNfapiMsg = (nfapi_nr_error_indication_scf_t *)msg;
-  uint8_t retval = pull16(ppReadPackedMsg, &pNfapiMsg->sfn, end);
-  retval &= pull16(ppReadPackedMsg, &pNfapiMsg->slot, end);
-  retval &= pull8(ppReadPackedMsg, &pNfapiMsg->message_id, end);
-  retval &= pull8(ppReadPackedMsg, &pNfapiMsg->error_code, end);
-  retval &= unpack_nr_tlv_list(NULL, 0, ppReadPackedMsg, end, config, &(pNfapiMsg->vendor_extension));
-  return retval;
 }
 
 static uint8_t unpack_received_interference_power_measurement_value(void *tlv, uint8_t **ppReadPackedMsg, uint8_t *end) {
