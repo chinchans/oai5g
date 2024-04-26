@@ -184,8 +184,9 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB)
       AssertFatal(pdsch_dmrs[slot][symb]!=NULL, "NR init: pdsch_dmrs for slot %d symbol %d - malloc failed\n", slot, symb);
 
       for (int q=0; q<NR_NB_NSCID; q++) {
-        pdsch_dmrs[slot][symb][q] = (uint32_t *)malloc16(pdsch_dmrs_init_length*sizeof(uint32_t));
+        pdsch_dmrs[slot][symb][q] = malloc16(pdsch_dmrs_init_length * sizeof(uint32_t));
         AssertFatal(pdsch_dmrs[slot][symb][q]!=NULL, "NR init: pdsch_dmrs for slot %d symbol %d nscid %d - malloc failed\n", slot, symb, q);
+        memset(pdsch_dmrs[slot][symb][q], 0, sizeof(uint32_t) * pdsch_dmrs_init_length);
       }
     }
   }
@@ -254,9 +255,10 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB)
   gNB->nr_srs_info = (nr_srs_info_t **)malloc16_clear(gNB->max_nb_srs * sizeof(nr_srs_info_t*));
   for (int id = 0; id < gNB->max_nb_srs; id++) {
     gNB->nr_srs_info[id] = (nr_srs_info_t *)malloc16_clear(sizeof(nr_srs_info_t));
-    gNB->nr_srs_info[id]->srs_generated_signal = (int32_t**)malloc16_clear(MAX_NUM_NR_SRS_AP*sizeof(int32_t*));
+    gNB->nr_srs_info[id]->srs_generated_signal = malloc16_clear(MAX_NUM_NR_SRS_AP * sizeof(c16_t *));
     for(int ap=0; ap<MAX_NUM_NR_SRS_AP; ap++) {
-      gNB->nr_srs_info[id]->srs_generated_signal[ap] = (int32_t*)malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
+      gNB->nr_srs_info[id]->srs_generated_signal[ap] =
+          malloc16_clear(fp->ofdm_symbol_size * MAX_NUM_NR_SRS_SYMBOLS * sizeof(c16_t));
     }
   }
 
@@ -513,7 +515,7 @@ void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,
   }
 
   fp->threequarter_fs = 0;
-  int bw_index = get_supported_band_index(mu, fp->nr_band, N_RB_DL);
+  int bw_index = get_supported_band_index(mu, fp->nr_band > 256 ? FR2 : FR1, N_RB_DL);
   gNB_config->carrier_config.dl_bandwidth.value = get_supported_bw_mhz(fp->nr_band > 256 ? FR2 : FR1, bw_index);
 
   nr_init_frame_parms(gNB_config, fp);
