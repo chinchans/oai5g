@@ -43,6 +43,8 @@
 #include <string.h>
 #include <pthread.h>
 
+#define NON_UE_ASSOCIATED_SRS_DUMMY_RNTI 0xcafe
+
 #define NR_SCHED_LOCK(lock)                                        \
   do {                                                             \
     int rc = pthread_mutex_lock(lock);                             \
@@ -232,6 +234,8 @@ typedef struct {
   NR_ServingCellConfigCommon_t *ServingCellConfigCommon;
   /// pre-configured ServingCellConfig that is default for every UE
   NR_ServingCellConfig_t *pre_ServingCellConfig;
+  NR_ARFCN_ValueEUTRA_t ul_CarrierFreq;
+  long ul_Bandwidth;
   /// Outgoing MIB PDU for PHY
   uint8_t MIB_pdu[3];
   /// Outgoing BCCH pdu for PHY
@@ -682,11 +686,9 @@ typedef struct nr_mac_rrc_ul_if_s {
 typedef struct {
   uint8_t pos_report_characteristics; // (M) //	ondemand	= 0, periodic	= 1
   uint8_t pos_measurement_periodicity; //(C) if report characteristics periodic	ms120=0, ms240=1, ms480=2, ms640=3, ms1024=4, ms20
-  uint8_t pos_report_ondemand_pending; // (C) if report characteristics ondemand the request sets this to 1 and once response is sent its set back to 0
-  int16_t toa_ns; // for the moment we only support toa measurements, others can be added here later
-  uint32_t frame; // for srs activation response
-  uint32_t slot; // for srs activation response
-} NR_UE_pos_t;
+  uint8_t pos_report_valid; // (C) if report has been received from L1 sets this to 1 and once response is sent its set back to 0
+  int16_t toa_ns[NB_ANTENNAS_RX]; // for the moment we only support toa measurements, others can be added here later
+} NR_meas_pos_t;
 
 /*! \brief UE list used by gNB to order UEs/CC for scheduling*/
 typedef struct {
@@ -712,7 +714,6 @@ typedef struct {
   float ul_thr_ue;
   float dl_thr_ue;
   long pdsch_HARQ_ACK_Codebook;
-  NR_UE_pos_t ue_pos_info;
 } NR_UE_info_t;
 
 typedef struct {
@@ -861,6 +862,10 @@ typedef struct gNB_MAC_INST_s {
 
   pthread_mutex_t sched_lock;
 
+  //holds the SRS config for NRPPa measurement request
+  f1ap_measurement_req_t *f1ap_meas_req;
+  //holds measurement response (non-ue associated)
+  NR_meas_pos_t meas_pos_info;
 } gNB_MAC_INST;
 
 #endif /*__LAYER2_NR_MAC_GNB_H__ */

@@ -141,6 +141,20 @@ int nrppa_gNB_handle_Measurement(nrppa_gnb_ue_info_t *nrppa_msg_info, NRPPA_NRPP
   // IE SRSConfiguration (Optional)
   NRPPA_FIND_PROTOCOLIE_BY_ID(NRPPA_MeasurementRequest_IEs_t, ie, container, NRPPA_ProtocolIE_ID_id_SRSConfiguration, false);
   if (ie != NULL) {
+    /*
+    NRPPA_SRSConfiguration_t nrppa_srs_config = ie->value.choice.SRSConfiguration;
+    f1ap_srs_configuration_t *f1ap_srs_config = &f1ap_req->srs_configuration;
+    f1ap_srs_config->srs_carrier_list.srs_carrier_list_length = 1;
+    f1ap_srs_config->srs_carrier_list.srs_carrier_list_item = malloc(f1ap_srs_config->srs_carrier_list.srs_carrier_list_length* sizeof(f1ap_srs_carrier_list_item_t));
+    for (int srs_idx = 0; srs_idx<f1ap_srs_config->srs_carrier_list.srs_carrier_list_length; srs_idx++) {
+      f1ap_srs_config_t *sRSConfig = &f1ap_srs_config->srs_carrier_list.srs_carrier_list_item[srs_idx].active_ul_bwp.sRSConfig;
+
+      sRSConfig->sRSResource_List.srs_resource_list_length = 1;
+      sRSConfig->sRSResource_List.srs_resource = malloc(sRSConfig->sRSResource_List.srs_resource_list_length*sizeof(f1ap_srs_resource_t));
+	
+      sRSConfig->sRSResourceSet_List.srs_resource_set_list_length = 1;
+      sRSConfig->sRSResourceSet_List.srs_resource_set = malloc( sRSConfig->sRSResourceSet_List.srs_resource_set_list_length*sizeof(f1ap_srs_resource_set_t));
+    */
     NRPPA_SRSConfiguration_t srs_config = ie->value.choice.SRSConfiguration;
     int maxnoSRScarrier = srs_config.sRSCarrier_List.list.count;
     f1ap_req->srs_configuration.srs_carrier_list.srs_carrier_list_length= maxnoSRScarrier;
@@ -453,7 +467,6 @@ int nrppa_gNB_handle_Measurement(nrppa_gnb_ue_info_t *nrppa_msg_info, NRPPA_NRPP
     } // for (int i = 0; i < maxnoSRScarrier; i++)
   }
   
-
   // IE MeasurementBeamInfoRequest (Optional)
   // NRPPA_FIND_PROTOCOLIE_BY_ID(NRPPA_MeasurementRequest_IEs_t, ie, container, NRPPA_ProtocolIE_ID_id_MeasurementBeamInfoRequest,
   // false); NRPPA_MeasurementBeamInfoRequest_t measurement_beam_info_request = ie->value.choice.MeasurementBeamInfoRequest;
