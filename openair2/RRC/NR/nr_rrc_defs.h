@@ -377,6 +377,11 @@ typedef struct cucp_cuup_if_s {
   cucp_cuup_bearer_context_release_func_t bearer_context_release;
 } cucp_cuup_if_t;
 
+typedef struct nr_rrc_du_ho_info_s {
+  bool location_ho_timer_active;
+  int location_ho_timer;
+} nr_rrc_du_ho_info_t;
+
 typedef struct nr_rrc_du_container_t {
   /* Tree-related data */
   RB_ENTRY(nr_rrc_du_container_t) entries;
@@ -386,6 +391,7 @@ typedef struct nr_rrc_du_container_t {
   NR_MIB_t *mib;
   NR_SIB1_t *sib1;
   NR_MeasurementTimingConfiguration_t *mtc;
+  nr_rrc_du_ho_info_t ho_info;
 } nr_rrc_du_container_t;
 
 typedef struct nr_rrc_cuup_container_t {
@@ -415,6 +421,8 @@ typedef struct gNB_RRC_INST_s {
 
   // gNB N3 GTPU instance
   instance_t e1_inst;
+
+  int location_ho_trigger;
 
   char *uecap_file;
 
