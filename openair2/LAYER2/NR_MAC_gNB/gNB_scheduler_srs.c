@@ -536,7 +536,6 @@ void nr_schedule_srs(int module_id, frame_t frame, int slot)
     NR_SRS_Config_t *srs_config = current_BWP->srs_Config;
     if (!srs_config)
       continue;
-
     for(int rs = 0; rs < srs_config->srs_ResourceSetToAddModList->list.count; rs++) {
 
       // Find periodic resource set

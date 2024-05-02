@@ -30,7 +30,6 @@
 #ifndef __OPENAIR_RRC_DEFS_NR_H__
 #define __OPENAIR_RRC_DEFS_NR_H__
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -158,7 +157,7 @@ typedef struct HANDOVER_INFO_NR_s {
   int                                                 size;               /* size of above message in bytes */
 } NR_HANDOVER_INFO;
 
-#define NR_RRC_BUFFER_SIZE                            sizeof(RRC_BUFFER_NR)
+#define NR_RRC_BUFFER_SIZE sizeof(RRC_BUFFER_NR)
 
 typedef struct nr_rrc_guami_s {
   uint16_t mcc;
@@ -341,7 +340,6 @@ typedef struct {
 } rrc_gNB_carrier_data_t;
 //---------------------------------------------------
 
-
 typedef struct {
   /* nea0 = 0, nea1 = 1, ... */
   int ciphering_algorithms[4];
@@ -365,6 +363,13 @@ typedef struct nr_mac_rrc_dl_if_s {
   ue_context_modification_refuse_func_t ue_context_modification_refuse;
   ue_context_release_command_func_t ue_context_release_command;
   dl_rrc_message_transfer_func_t dl_rrc_message_transfer;
+  positioning_information_request_func_t positioning_information_request; // nrppa adeel
+  positioning_activation_request_func_t positioning_activation_request;
+  positioning_deactivation_func_t positioning_deactivation;
+  trp_information_request_func_t trp_information_request;
+  positioning_measurement_request_func_t positioning_measurement_request;
+  positioning_measurement_update_func_t positioning_measurement_update;
+  positioning_measurement_abort_func_t positioning_measurement_abort;
 } nr_mac_rrc_dl_if_t;
 
 typedef struct cucp_cuup_if_s {
