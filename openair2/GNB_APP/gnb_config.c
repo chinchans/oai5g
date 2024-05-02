@@ -697,6 +697,7 @@ void RCconfig_verify(configmodule_interface_t *cfg, ngran_node_t node_type)
     verify_gnb_param_notset(gnbp, GNB_DO_CSIRS_IDX, GNB_CONFIG_STRING_DOCSIRS);
     verify_gnb_param_notset(gnbp, GNB_DO_SRS_IDX, GNB_CONFIG_STRING_DOSRS);
     verify_gnb_param_notset(gnbp, GNB_FORCE256QAMOFF_IDX, GNB_CONFIG_STRING_FORCE256QAMOFF);
+    verify_gnb_param_notset(gnbp, GNB_MAXMIMOLAYERS_IDX, GNB_CONFIG_STRING_MAXMIMOLAYERS);
 
     // check for some general sections
     verify_section_notset(cfg, NULL, CONFIG_STRING_L1_LIST);
@@ -1241,11 +1242,13 @@ void RCconfig_nr_macrlc(configmodule_interface_t *cfg)
   config.do_CSIRS = *GNBParamList.paramarray[0][GNB_DO_CSIRS_IDX].iptr;
   config.do_SRS = *GNBParamList.paramarray[0][GNB_DO_SRS_IDX].iptr;
   config.force_256qam_off = *GNBParamList.paramarray[0][GNB_FORCE256QAMOFF_IDX].iptr;
+  config.maxMIMO_layers = *GNBParamList.paramarray[0][GNB_MAXMIMOLAYERS_IDX].iptr;
   LOG_I(GNB_APP,
-        "CSI-RS %d, SRS %d, 256 QAM %s\n",
+        "CSI-RS %d, SRS %d, 256 QAM %s, maxMIMO_Layers %d\n",
         config.do_CSIRS,
         config.do_SRS,
-        config.force_256qam_off ? "force off" : "may be on");
+        config.force_256qam_off ? "force off" : "may be on",
+        config.maxMIMO_layers);
 
   NR_ServingCellConfigCommon_t *scc = get_scc_config(cfg, config.minRXTXTIME);
   //xer_fprint(stdout, &asn_DEF_NR_ServingCellConfigCommon, scc);
