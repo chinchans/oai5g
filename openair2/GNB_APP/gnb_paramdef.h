@@ -224,7 +224,92 @@ typedef enum {
 }
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------*/
-/*-------------------------------------------------------------------------------------------------------------------------------------------------*/		  
+/*-------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+/* Neighbor Cell Configurations*/
+#define GNB_CONFIG_STRING_NEIGHBOR_LIST "neighbor_list"
+// clang-format off
+#define GNB_NEIGHBOR_LIST_PARAM_LIST {                                                                  \
+/*   optname                                                  helpstr                                 paramflags                    XXXptr     def val          type    numelt */ \
+  {GNB_CONFIG_STRING_NRCELLID,                              "cell nrCell Id which has neighbors",              PARAMFLAG_MANDATORY,           .u64ptr=NULL, .defint64val=0,               TYPE_UINT64,    0},    \
+  {GNB_CONFIG_STRING_NEIGHBOR_CELL_PHYSICAL_ID,            "neighbor cell physical id",            PARAMFLAG_MANDATORY,           .uptr=NULL,   .defuintval=0,                TYPE_UINT,      0},    \
+}
+// clang-format on
+#define GNB_CONFIG_STRING_NEIGHBOR_CELL_LIST "neighbor_cell_configuration"
+
+#define GNB_CONFIG_STRING_NEIGHBOR_GNB_ID "gNB_ID"
+#define GNB_CONFIG_STRING_NEIGHBOR_NR_CELLID "nr_cellid"
+#define GNB_CONFIG_STRING_NEIGHBOR_CELL_PHYSICAL_ID "physical_cellId"
+#define GNB_CONFIG_STRING_NEIGHBOR_CELL_ABS_FREQ_SSB "absoluteFrequencySSB"
+#define GNB_CONFIG_STRING_NEIGHBOR_CELL_SCS "subcarrierSpacing"
+#define GNB_CONFIG_STRING_NEIGHBOR_TRACKING_ARE_CODE "tracking_area_code"
+#define GNB_CONFIG_STRING_NEIGHBOR_PLMN "plmn"
+
+#define GNB_CONFIG_N_CELL_GNB_ID_IDX 0
+#define GNB_CONFIG_N_CELL_NR_CELLID_IDX 1
+#define GNB_CONFIG_N_CELL_PHYSICAL_ID_IDX 2
+#define GNB_CONFIG_N_CELL_ABS_FREQ_SSB_IDX 3
+#define GNB_CONFIG_N_CELL_SCS_IDX 4
+#define GNB_CONFIG_N_CELL_TAC_IDX 5
+// clang-format off
+#define GNBNEIGHBORCELLPARAMS_DESC {                                                                  \
+/*   optname                                                  helpstr                                 paramflags                    XXXptr     def val          type    numelt */ \
+  {GNB_CONFIG_STRING_GNB_ID,                                "neighbor cell's gNB ID",               PARAMFLAG_MANDATORY,           .uptr=NULL,   .defintval=0,                 TYPE_UINT,      0},    \
+  {GNB_CONFIG_STRING_NRCELLID,                              "neighbor cell nrCell Id",              PARAMFLAG_MANDATORY,           .u64ptr=NULL, .defint64val=0,               TYPE_UINT64,    0},    \
+  {GNB_CONFIG_STRING_NEIGHBOR_CELL_PHYSICAL_ID,            "neighbor cell physical id",            PARAMFLAG_MANDATORY,           .uptr=NULL,   .defuintval=0,                TYPE_UINT,      0},    \
+  {GNB_CONFIG_STRING_NEIGHBOR_CELL_ABS_FREQ_SSB,           "neighbor cell abs freq ssb",           PARAMFLAG_MANDATORY,           .i64ptr=NULL, .defint64val=0,               TYPE_INT64,     0},    \
+  {GNB_CONFIG_STRING_NEIGHBOR_CELL_SCS,                    "neighbor cell scs",                    PARAMFLAG_MANDATORY,           .uptr=NULL,   .defuintval=0,                TYPE_UINT,      0},    \
+  {GNB_CONFIG_STRING_NEIGHBOR_TRACKING_ARE_CODE,           "neighbor cell tracking area",          PARAMFLAG_MANDATORY,           .uptr=NULL,   .defuintval=0,                TYPE_UINT,      0},    \
+}
+// clang-format on
+
+/* New Measurement Configurations*/
+
+#define GNB_CONFIG_STRING_MEASUREMENT_CONFIGURATION "nr_measurement_configuration"
+#define MEASUREMENT_EVENTS_PERIODICAL "Periodical"
+#define MEASUREMENT_EVENTS_A2 "A2"
+#define MEASUREMENT_EVENTS_A3 "A3"
+
+#define MEASUREMENT_EVENTS_OFFSET "offset"
+#define MEASUREMENT_EVENTS_HYSTERESIS "hysteresis"
+#define MEASUREMENT_EVENTS_TIME_TO_TRIGGER "time_to_trigger"
+#define MEASUREMENT_EVENTS_THRESHOLD "threshold"
+#define MEASUREMENT_EVENTS_PERIODICAL_BEAM_MEASUREMENT "includeBeamMeasurements"
+#define MEASUREMENT_EVENTS_PERIODICAL_NR_OF_RS_INDEXES "maxNrofRS_IndexesToReport"
+#define MEASUREMENT_EVENTS_CELL_ID "cell_id"
+#define MEASUREMENT_EVENT_ENABLE "enable"
+// clang-format off
+#define MEASUREMENT_A3_GLOBALPARAMS_DESC                                                                                      \
+  {                                                                                                                               \
+        {MEASUREMENT_EVENTS_CELL_ID, "neighbor cellId for A3Report", 0, .i64ptr = NULL, .defint64val = -1, TYPE_INT64, 0},           \
+        {MEASUREMENT_EVENTS_TIME_TO_TRIGGER, "a3 time to trigger", 0, .i64ptr = NULL, .defint64val = 1, TYPE_INT64, 0}, \
+        {MEASUREMENT_EVENTS_OFFSET, "a3 offset", 0, .i64ptr = NULL, .defint64val = 60, TYPE_INT64, 0},                  \
+        {MEASUREMENT_EVENTS_HYSTERESIS, "a3 hysteresis", 0, .i64ptr = NULL, .defint64val = 0, TYPE_INT64, 0},           \
+  }
+
+#define MEASUREMENT_A2_GLOBALPARAMS_DESC                                                                                      \
+  {                                                                                                                               \
+        {MEASUREMENT_EVENT_ENABLE, "enable the event", 0, .i64ptr = NULL, .defint64val = 0, TYPE_INT64, 0}, \
+        {MEASUREMENT_EVENTS_TIME_TO_TRIGGER, "a2 time to trigger", 0, .i64ptr = NULL, .defint64val = 1, TYPE_INT64, 0}, \
+        {MEASUREMENT_EVENTS_THRESHOLD, "a2 threshold", 0, .i64ptr = NULL, .defint64val = 30, TYPE_INT64, 0},            \
+  }
+
+#define MEASUREMENT_PERIODICAL_GLOBALPARAMS_DESC                                                                                      \
+  {                                                                                                                               \
+        {MEASUREMENT_EVENT_ENABLE, "enable the event", 0, .i64ptr = NULL, .defint64val = 0, TYPE_INT64, 0}, \
+        {MEASUREMENT_EVENTS_PERIODICAL_BEAM_MEASUREMENT, "includeBeamMeasurements", PARAMFLAG_BOOL, .i64ptr = NULL, .defint64val = 1, TYPE_INT64, 0}, \
+        {MEASUREMENT_EVENTS_PERIODICAL_NR_OF_RS_INDEXES, "maxNrofRS_IndexesToReport", 0, .i64ptr = NULL, .defint64val = 30, TYPE_INT64, 0},            \
+  }
+// clang-format on
+
+#define MEASUREMENT_EVENTS_CELL_ID_IDX 0
+#define MEASUREMENT_EVENTS_ENABLE_IDX 0
+#define MEASUREMENT_EVENTS_TIMETOTRIGGER_IDX 1
+#define MEASUREMENT_EVENTS_A2_THRESHOLD_IDX 2
+#define MEASUREMENT_EVENTS_OFFSET_IDX 2
+#define MEASUREMENT_EVENTS_HYSTERESIS_IDX 3
+#define MEASUREMENT_EVENTS_INCLUDE_BEAM_MEAS_IDX 1
+#define MEASUREMENT_EVENTS_MAX_RS_INDEX_TO_REPORT 2
 
 /* PLMN ID configuration */
 
