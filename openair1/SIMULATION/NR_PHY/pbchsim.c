@@ -243,7 +243,7 @@ int main(int argc, char **argv)
     exit_fun("[NR_PBCHSIM] Error, configuration module init failed\n");
   }
 
-  while ((c = getopt (argc, argv, "F:g:hIL:m:M:n:N:o:O:P:r:R:s:S:x:y:z:")) != -1) {
+  while ((c = getopt (argc, argv, "F:g:hIL:m:M:n:N:o:O:P:r:R:s:S:x:y:z:-:")) != -1) {
     switch (c) {
     /*case 'f':
       write_output_file=1;
@@ -425,6 +425,9 @@ int main(int argc, char **argv)
         printf("Unsupported number of RX antennas %d. Exiting.\n", n_rx);
         exit(-1);
       }
+      break;
+
+    case '-':
       break;
 
     default:

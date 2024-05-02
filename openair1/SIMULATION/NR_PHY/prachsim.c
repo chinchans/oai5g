@@ -164,7 +164,7 @@ int main(int argc, char **argv){
 
   randominit(0);
 
-  while ((c = getopt (argc, argv, "hHaA:Cc:l:r:p:g:m:n:s:S:t:x:y:v:V:z:N:F:d:Z:L:R:E")) != -1) {
+  while ((c = getopt (argc, argv, "hHaA:Cc:l:r:p:g:m:n:s:S:t:x:y:v:V:z:N:F:d:Z:L:R:E-:")) != -1) {
     switch (c) {
     case 'a':
       printf("Running AWGN simulation\n");
@@ -360,6 +360,9 @@ int main(int argc, char **argv){
 	exit(-1);
       }
       
+      break;
+
+    case '-':
       break;
 
     default:

@@ -166,7 +166,7 @@ int main(int argc, char **argv)
   randominit(0);
 
   //while ((c = getopt(argc, argv, "df:hpg:i:j:n:l:m:r:s:S:y:z:M:N:F:R:P:")) != -1) {
-  while ((c = getopt(argc, argv, "hg:n:s:S:py:z:M:N:R:F:m:l:q:r:W:")) != -1) {
+  while ((c = getopt(argc, argv, "hg:n:s:S:py:z:M:N:R:F:m:l:q:r:W:-:")) != -1) {
     switch (c) {
       /*case 'f':
          write_output_file = 1;
@@ -341,6 +341,9 @@ int main(int argc, char **argv)
       /*case 'x':
         transmission_mode = atoi(optarg);
         break;*/
+
+      case '-':
+        break;
 
       default:
         case 'h':
