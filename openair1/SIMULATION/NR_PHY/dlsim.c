@@ -336,7 +336,7 @@ int main(int argc, char **argv)
 
   FILE *scg_fd=NULL;
 
-  while ((c = getopt(argc, argv, "f:hA:p:f:g:i:n:s:S:t:v:x:y:z:o:M:N:F:GR:d:PI:L:a:b:e:m:w:T:U:q:X:Y:Z:c")) != -1) {
+  while ((c = getopt(argc, argv, "f:hA:p:f:g:i:n:s:S:t:v:x:y:z:o:M:N:F:GR:d:PI:L:a:b:e:m:w:T:U:q:X:Y:Z:c-:")) != -1) {
     switch (c) {
     case 'f':
       scg_fd = fopen(optarg,"r");
@@ -525,6 +525,9 @@ int main(int argc, char **argv)
 
     case 'o':
       delay = atoi(optarg);
+      break;
+
+    case '-':
       break;
 
     default:
