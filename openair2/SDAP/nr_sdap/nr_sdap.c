@@ -77,8 +77,10 @@ void sdap_data_ind(rb_id_t pdcp_entity,
     return;
   }
 
+  int qfi = sdap_entity->drb2qfi_map(sdap_entity, pdcp_entity);
   sdap_entity->rx_entity(sdap_entity,
                          pdcp_entity,
+                         qfi,
                          is_gnb,
                          has_sdap_rx,
                          pdusession_id,

@@ -26,7 +26,12 @@
 #include "NR_asn_constant.h"
 
 #define GTPV1U_MAX_BEARERS_PER_UE max_val_LTE_DRB_Identity
-#define NR_GTPV1U_MAX_BEARERS_PER_UE max_val_NR_DRB_Identity
+/* Max number of tunnels per UE set N3 limit (e.g. max number of PDU sessions per UE) */
+#define NR_GTPV1U_MAX_TUNNELS_PER_UE       NR_maxNrofPDU_Sessions_r17
+/* Max number of Bearers per UE set to the F1 limit (e.g. max number of DRBs per UE) */
+#define NR_GTPV1U_MAX_BEARERS_PER_UE       max_val_NR_DRB_Identity
+/* Max number of QFI per Bearer */
+#define NR_GTPV1U_MAX_QFI_PER_BEARER       NR_maxNrofQFIs
 
 #define GTPV1U_ENB_TUNNEL_DATA_IND(mSGpTR)    (mSGpTR)->ittiMsg.Gtpv1uTunnelDataInd
 #define GTPV1U_TUNNEL_DATA_REQ(mSGpTR)    (mSGpTR)->ittiMsg.Gtpv1uTunnelDataReq
@@ -113,6 +118,7 @@ typedef struct gtpv1u_tunnel_data_req_s {
   uint32_t               offset;               ///< start of message offset in buffer
   ue_id_t                ue_id;
   rb_id_t                bearer_id;
+  int                    qfi;
 } gtpv1u_tunnel_data_req_t;
 
 typedef struct gtpv1u_enb_data_forwarding_req_s {
@@ -166,20 +172,38 @@ typedef struct {
   char                  localPortStr[256];
 } Gtpv1uReq;
 
+/**
+ * @brief QoS Flow information for a given bearer
+ */
+typedef struct gtpv1u_qos_s {
+  /* QFIs list for each Bearer (0 ... Max Number of QFIs per Bearer) */
+  int qfi [NR_GTPV1U_MAX_QFI_PER_BEARER];
+  /* Bearer ID */
+  int rb_id;
+} gtpv1u_qos_t;
 
+/**
+ * @brief GTP-U Create Tunnel Request
+ */
 typedef struct gtpv1u_gnb_create_tunnel_req_s {
-  ue_id_t                ue_id;
-  int                    num_tunnels;
-  //teid_t                 upf_NGu_teid[NR_GTPV1U_MAX_BEARERS_PER_UE];  ///< Tunnel Endpoint Identifier
-  teid_t                 outgoing_teid[NR_GTPV1U_MAX_BEARERS_PER_UE];
-  int outgoing_qfi[NR_GTPV1U_MAX_BEARERS_PER_UE];
-  pdusessionid_t         pdusession_id[NR_GTPV1U_MAX_BEARERS_PER_UE];
-  ebi_t                  incoming_rb_id[NR_GTPV1U_MAX_BEARERS_PER_UE];
-  //ebi_t                  outgoing_rb_id[NR_GTPV1U_MAX_BEARERS_PER_UE];
-  //transport_layer_addr_t upf_addr[NR_GTPV1U_MAX_BEARERS_PER_UE];
-  transport_layer_addr_t dst_addr[NR_GTPV1U_MAX_BEARERS_PER_UE];
+  ue_id_t                   ue_id;
+  /* Number of GTP tunnels */
+  int                       num_tunnels;
+  /* Outgoing TEID for the GTP tunnel request (0 ... Max Number of PDU Sessions per UE)*/
+  teid_t                    outgoing_teid[NR_GTPV1U_MAX_TUNNELS_PER_UE];
+  /* Outgoing QFIs for each Bearer of each PDU session (0 ... Max Number of PDU Sessions per UE) (0 ... Max Number of Bearers per PDU Session) */
+  gtpv1u_qos_t              outgoing_qfi[NR_GTPV1U_MAX_TUNNELS_PER_UE][NR_GTPV1U_MAX_BEARERS_PER_UE];
+  /* PDU Session ID for the GTP tunnel request (0 ... Max Number of PDU Sessions per UE) */
+  pdusessionid_t            pdusession_id[NR_GTPV1U_MAX_TUNNELS_PER_UE];
+  /* Incoming RB for the GTP tunnel request (0 ... Max Number of PDU Sessions per UE) */
+  ebi_t                     incoming_rb_id[NR_GTPV1U_MAX_TUNNELS_PER_UE];
+  /* Destination address for the GTP tunnel request (0 ... Max Number of PDU Sessions per UE) */
+  transport_layer_addr_t    dst_addr[NR_GTPV1U_MAX_TUNNELS_PER_UE];
 } gtpv1u_gnb_create_tunnel_req_t;
 
+/**
+ * @brief GTP-U Create Tunnel Response
+ */
 typedef struct gtpv1u_gnb_create_tunnel_resp_s {
   uint8_t                status;               ///< Status of S1U endpoint creation (Failed = 0xFF or Success = 0x0)
   ue_id_t                ue_id;
@@ -188,6 +212,10 @@ typedef struct gtpv1u_gnb_create_tunnel_resp_s {
   pdusessionid_t         pdusession_id[NR_GTPV1U_MAX_BEARERS_PER_UE];
   transport_layer_addr_t gnb_addr;
 } gtpv1u_gnb_create_tunnel_resp_t;
+
+/**
+ * @brief GTP-U Delete Tunnel Request
+ */
 typedef struct gtpv1u_gnb_delete_tunnel_req_s {
   ue_id_t                ue_id;
   uint8_t                num_pdusession;
