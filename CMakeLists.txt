@@ -652,13 +652,11 @@ add_library(UTIL
   ${OPENAIR_DIR}/common/utils/LOG/vcd_signal_dumper.c
   ${OPENAIR2_DIR}/UTIL/MATH/oml.c
   ${OPENAIR2_DIR}/UTIL/OPT/probe.c
-  ${OPENAIR_DIR}/common/utils/threadPool/thread-pool.c
   ${OPENAIR_DIR}/common/utils/utils.c
-  ${OPENAIR_DIR}/common/utils/system.c
   ${OPENAIR_DIR}/common/utils/time_meas.c
   ${OPENAIR_DIR}/common/utils/time_stat.c
 )
-target_link_libraries(UTIL PUBLIC ${T_LIB} pthread LOG)
+target_link_libraries(UTIL PUBLIC ${T_LIB} pthread LOG thread-pool system)
 
 set(SECURITY_SRC
   ${OPENAIR3_DIR}/SECU/secu_defs.c
