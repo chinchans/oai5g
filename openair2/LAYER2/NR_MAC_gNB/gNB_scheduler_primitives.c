@@ -59,6 +59,8 @@
 #include "common/ran_context.h"
 #include "nfapi/oai_integration/vendor_ext.h"
 
+#include "common/utils/alg/find.h"
+
 //#define DEBUG_DCI
 
 extern RAN_CONTEXT_t RC;
@@ -3139,6 +3141,9 @@ void prepare_initial_ul_rrc_message(gNB_MAC_INST *mac, NR_UE_info_t *UE)
   const NR_RLC_BearerConfig_t *bearer = cellGroupConfig->rlc_BearerToAddModList->list.array[0];
   DevAssert(bearer->servedRadioBearer->choice.srb_Identity == 1);
   nr_rlc_add_srb(UE->rnti, bearer->servedRadioBearer->choice.srb_Identity, bearer);
+
+  nr_lc_config_t c = {.lcid = 1}; // cf. get_lcid_from_srbid()
+  nr_mac_add_lcid(&UE->UE_sched_ctrl, &c);
 }
 
 void nr_mac_trigger_release_timer(NR_UE_sched_ctrl_t *sched_ctrl, NR_SubcarrierSpacing_t subcarrier_spacing)
@@ -3215,9 +3220,35 @@ void nr_mac_trigger_reconfiguration(const gNB_MAC_INST *nrmac, const NR_UE_info_
   nrmac->mac_rrc.ue_context_modification_required(&required);
 }
 
-bool eq_lcid_config(const void *vval, const void *vit)
+static bool eq_lcid_config(const void *vval, const void *vit)
 {
   const nr_lc_config_t *val = (const nr_lc_config_t *)vval;
   const nr_lc_config_t *it = (const nr_lc_config_t *)vit;
   return it->lcid == val->lcid;
+}
+
+bool nr_mac_add_lcid(NR_UE_sched_ctrl_t* sched_ctrl, const nr_lc_config_t *c)
+{
+  elm_arr_t elm = find_if(&sched_ctrl->lc_config, (void *) c, eq_lcid_config);
+  if (elm.found) {
+    LOG_W(NR_MAC, "cannot add LCID %d: already present\n", c->lcid);
+    return false;
+  }
+
+  LOG_D(NR_MAC, "Adding LCID %d\n", c->lcid);
+  seq_arr_push_back(&sched_ctrl->lc_config, (void*) c, sizeof(*c));
+  return true;
+}
+
+bool nr_mac_remove_lcid(NR_UE_sched_ctrl_t *sched_ctrl, long lcid)
+{
+  nr_lc_config_t c = {.lcid = lcid};
+  elm_arr_t elm = find_if(&sched_ctrl->lc_config, &c, eq_lcid_config);
+  if (!elm.found) {
+    LOG_E(NR_MAC, "can not remove LC: no such LC with ID %ld\n", lcid);
+    return false;
+  }
+
+  seq_arr_erase(&sched_ctrl->lc_config, elm.it);
+  return true;
 }
