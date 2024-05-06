@@ -2097,6 +2097,7 @@ void delete_nr_ue_data(NR_UE_info_t *UE, NR_COMMON_channels_t *ccPtr, uid_alloca
   ASN_STRUCT_FREE(asn_DEF_NR_CellGroupConfig, UE->reconfigCellGroup);
   ASN_STRUCT_FREE(asn_DEF_NR_UE_NR_Capability, UE->capability);
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
+  seq_arr_free(&sched_ctrl->lc_config, NULL);
   destroy_nr_list(&sched_ctrl->available_dl_harq);
   destroy_nr_list(&sched_ctrl->feedback_dl_harq);
   destroy_nr_list(&sched_ctrl->retrans_dl_harq);
@@ -2489,6 +2490,9 @@ NR_UE_info_t *add_new_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rntiP, NR_CellGroupConf
   sched_ctrl->ta_update = 31;
   sched_ctrl->sched_srs.frame = -1;
   sched_ctrl->sched_srs.slot = -1;
+
+  // initialize LCID structure
+  seq_arr_init(&sched_ctrl->lc_config, sizeof(nr_lc_config_t));
 
   // initialize UE BWP information
   NR_UE_DL_BWP_t *dl_bwp = &UE->current_DL_BWP;
@@ -3209,4 +3213,11 @@ void nr_mac_trigger_reconfiguration(const gNB_MAC_INST *nrmac, const NR_UE_info_
     .cause_value = F1AP_CauseRadioNetwork_action_desirable_for_radio_reasons,
   };
   nrmac->mac_rrc.ue_context_modification_required(&required);
+}
+
+bool eq_lcid_config(const void *vval, const void *vit)
+{
+  const nr_lc_config_t *val = (const nr_lc_config_t *)vval;
+  const nr_lc_config_t *it = (const nr_lc_config_t *)vit;
+  return it->lcid == val->lcid;
 }
