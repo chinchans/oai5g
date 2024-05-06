@@ -174,6 +174,7 @@ static int handle_ue_context_srbs_setup(NR_UE_info_t *UE,
     nr_rlc_add_srb(UE->rnti, srb->srb_id, rlc_BearerConfig);
 
     nr_lc_config_t c = {.lcid = get_lcid_from_srbid(srb->srb_id)};
+    c.priority = c.lcid == 2 ? 3 : 1; // see 38.331 sec 9.2.1
     nr_mac_add_lcid(&UE->UE_sched_ctrl, &c);
 
     (*resp_srbs)[i] = *srb;
@@ -239,8 +240,12 @@ static int handle_ue_context_drbs_setup(NR_UE_info_t *UE,
     nr_rlc_add_drb(UE->rnti, drb->drb_id, rlc_BearerConfig);
 
     nr_lc_config_t c = {.lcid = get_lcid_from_drbid(drb->drb_id), .nssai = drb->nssai};
-    for (int q = 0; q < drb->drb_info.flows_to_be_setup_length; ++q)
+    int prio = 100;
+    for (int q = 0; q < drb->drb_info.flows_to_be_setup_length; ++q) {
       c.qos_config[q] = get_qos_config(&drb->drb_info.flows_mapped_to_drb[q].qos_params.qos_characteristics);
+      prio = min(prio, c.qos_config[q].priority);
+    }
+    c.priority = prio;
     nr_mac_add_lcid(&UE->UE_sched_ctrl, &c);
 
     *resp_drb = *drb;
