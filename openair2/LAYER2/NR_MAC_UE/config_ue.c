@@ -1709,11 +1709,13 @@ static void configure_maccellgroup(NR_UE_MAC_INST_t *mac, const NR_MAC_CellGroup
         // NR_SchedulingRequestToAddMod__sr_TransMax_n4	= 0 and so on
         // to obtain the value to configure we need to right shift 4 by the RRC parameter
         sr_info->maxTransmissions = 4 << sr->sr_TransMax;
-        int target_ms = 0;
-        if (sr->sr_ProhibitTimer)
-          target_ms = 1 << *sr->sr_ProhibitTimer;
-        // length of slot is (1/2^scs)ms
-        nr_timer_setup(&sr_info->prohibitTimer, target_ms << scs, 1); // 1 slot update rate
+        if (sr->sr_ProhibitTimer) {
+          int target_ms = 1 << *sr->sr_ProhibitTimer;
+          // length of slot is (1/2^scs)ms
+          nr_timer_setup(&sr_info->prohibitTimer, target_ms << scs, 1); // 1 slot update rate
+        } else {
+          nr_timer_setup(&sr_info->prohibitTimer, UINT_MAX, 0);
+        }
       }
     }
   }
