@@ -670,6 +670,7 @@ int nvIPC_Init(char* if_name) {
   // Want to use transport SHM, type epoll, module secondary (reads the created shm from cuphycontroller)
   load_hard_code_config(&nv_ipc_config, NV_IPC_MODULE_SECONDARY, NV_IPC_TRANSPORT_SHM);
   // Create nv_ipc_t instance
+  LOG_I(NFAPI_VNF, "%s: creatinf IPC interface with prefix %s\n", __func__, if_name);
   strcpy(nv_ipc_config.transport_config.shm.prefix,if_name);
   if ((ipc = create_nv_ipc_interface(&nv_ipc_config)) == NULL) {
     LOG_E(NFAPI_VNF, "%s: create IPC interface failed\n", __func__);
