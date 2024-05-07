@@ -28,6 +28,7 @@
 #include "F1AP_CauseRadioNetwork.h"
 #include "openair3/ocp-gtpu/gtp_itf.h"
 #include "openair2/LAYER2/nr_pdcp/nr_pdcp_oai_api.h"
+#include "NR_MAC_gNB/slicing/nr_slicing.h"
 
 #include "uper_decoder.h"
 #include "uper_encoder.h"
@@ -323,8 +324,28 @@ NR_CellGroupConfig_t *clone_CellGroupConfig(const NR_CellGroupConfig_t *orig)
   return cloned;
 }
 
-static void set_nssaiConfig(const int drb_len, const f1ap_drb_to_be_setup_t *req_drbs, NR_UE_sched_ctrl_t *sched_ctrl)
+static void set_nssaiConfig(const int srb_len,
+                            const f1ap_srb_to_be_setup_t *req_srbs,
+                            const int drb_len,
+                            const f1ap_drb_to_be_setup_t *req_drbs,
+                            NR_UE_sched_ctrl_t *sched_ctrl)
 {
+  gNB_MAC_INST *mac = RC.nrmac[0];
+  for (int i = 0; i < srb_len; i++) {
+    const f1ap_srb_to_be_setup_t *srb = &req_srbs[i];
+    const long lcid = get_lcid_from_srbid(srb->srb_id);
+    /* consider first slice as default slice and assign it for SRBs */
+    nr_pp_impl_param_dl_t *dl = &mac->pre_processor_dl;
+    if (dl->slices) {
+      nssai_t *default_nssai = &dl->slices->s[0]->nssai;
+      sched_ctrl->dl_lc_nssai[lcid] = *default_nssai;
+    } else {
+      nssai_t nssai = {.sst = 0, .sd = 0};
+      sched_ctrl->dl_lc_nssai[lcid] = nssai;
+    }
+    LOG_I(NR_MAC, "Setting NSSAI sst: %d, sd: %d for SRB: %ld\n", sched_ctrl->dl_lc_nssai[lcid].sst, sched_ctrl->dl_lc_nssai[lcid].sd, srb->srb_id);
+  }
+
   for (int i = 0; i < drb_len; i++) {
     const f1ap_drb_to_be_setup_t *drb = &req_drbs[i];
 
@@ -446,8 +467,16 @@ void ue_context_setup_request(const f1ap_ue_context_setup_t *req)
   set_QoSConfig(req, &UE->UE_sched_ctrl);
 
   /* Set NSSAI config in MAC for each active DRB */
-  set_nssaiConfig(req->drbs_to_be_setup_length, req->drbs_to_be_setup, &UE->UE_sched_ctrl);
+  set_nssaiConfig(req->srbs_to_be_setup_length,
+                  req->srbs_to_be_setup,
+                  req->drbs_to_be_setup_length,
+                  req->drbs_to_be_setup,
+                  &UE->UE_sched_ctrl);
 
+  /* Associate UE to the corresponding slice*/
+  nr_pp_impl_param_dl_t *dl = &mac->pre_processor_dl;
+  if (dl->slices)
+    dl->add_UE(dl->slices, UE);
   NR_SCHED_UNLOCK(&mac->sched_lock);
 
   /* some sanity checks, since we use the same type for request and response */
@@ -551,7 +580,16 @@ void ue_context_modification_request(const f1ap_ue_context_modif_req_t *req)
     set_QoSConfig(req, &UE->UE_sched_ctrl);
 
     /* Set NSSAI config in MAC for each active DRB */
-    set_nssaiConfig(req->drbs_to_be_setup_length, req->drbs_to_be_setup, &UE->UE_sched_ctrl);
+    set_nssaiConfig(req->srbs_to_be_setup_length,
+                    req->srbs_to_be_setup,
+                    req->drbs_to_be_setup_length,
+                    req->drbs_to_be_setup,
+                    &UE->UE_sched_ctrl);
+
+    /* Associate UE to the corresponding slice*/
+    nr_pp_impl_param_dl_t *dl = &mac->pre_processor_dl;
+    if (dl->slices)
+      dl->add_UE(dl->slices, UE);
   } else {
     ASN_STRUCT_FREE(asn_DEF_NR_CellGroupConfig, new_CellGroup); // we actually don't need it
   }
