@@ -26,6 +26,10 @@
 #include "f1ap_messages_types.h"
 #include "openair2/RRC/NR/MESSAGES/asn1_msg.h"
 
+void f1_du_reset(const f1ap_reset_t *reset);
+void du_initialize_all_ue_states(void);
+void du_initialize_ue_states(void);
+
 void f1_setup_response(const f1ap_setup_resp_t *resp);
 void f1_setup_failure(const f1ap_setup_failure_t *failure);
 void gnb_du_configuration_update_acknowledge(const f1ap_gnb_du_configuration_update_acknowledge_t *ack);

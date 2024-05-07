@@ -105,6 +105,51 @@ static bool check_plmn_identity(const f1ap_plmn_t *check_plmn, const f1ap_plmn_t
   return plmn->mcc == check_plmn->mcc && plmn->mnc_digit_length == check_plmn->mnc_digit_length && plmn->mnc == check_plmn->mnc;
 }
 
+void du_initialize_all_ue_states()
+{
+  gNB_MAC_INST *mac = RC.nrmac[0];
+  NR_SCHED_LOCK(&mac->sched_lock);
+
+  NR_UE_info_t **UE_list = (&mac->UE_info)->list;
+  NR_UE_info_t *UE = *UE_list;
+
+  instance_t f1inst = get_f1_gtp_instance();
+
+  while (UE != NULL) {
+    int rnti = UE->rnti;
+    nr_mac_release_ue(mac, rnti, false);
+    newGtpuDeleteAllTunnels(f1inst, rnti);
+    UE_list = (&mac->UE_info)->list;
+    UE = *UE_list;
+  }
+  NR_SCHED_UNLOCK(&mac->sched_lock);
+}
+
+void du_initialize_ue_states()
+{
+  // TODO: extend this to handle partial initialization
+  // This is for ResetType - partial F1 interface
+  AssertFatal(1==0, "Partial F1AP UE state initialization not implemented.\n");
+}
+
+void f1_du_reset(const f1ap_reset_t *reset)
+{ 
+    LOG_I(MAC, "received F1 Reset from CU\n");
+    
+    if(reset->reset_type == F1AP_RESET_ALL) {
+      du_initialize_all_ue_states();
+    } else {
+      AssertFatal(1==0, "Partial F1 Interface Reset not handled\n");
+    }
+
+    f1ap_reset_ack_t ack = {
+      .transaction_id = reset->transaction_id
+    };
+
+    gNB_MAC_INST *mac = RC.nrmac[0];
+    mac->mac_rrc.f1_reset_ack(reset, &ack);
+}
+
 void f1_setup_response(const f1ap_setup_resp_t *resp)
 {
   LOG_I(MAC, "received F1 Setup Response from CU %s\n", resp->gNB_CU_name);
@@ -649,7 +694,7 @@ void ue_context_release_command(const f1ap_ue_context_release_cmd_t *cmd)
 
   if (UE->UE_sched_ctrl.ul_failure || cmd->rrc_container_length == 0) {
     /* The UE is already not connected anymore or we have nothing to forward*/
-    nr_mac_release_ue(mac, cmd->gNB_DU_ue_id);
+    nr_mac_release_ue(mac, cmd->gNB_DU_ue_id, true);
   } else {
     /* UE is in sync: forward release message and mark to be deleted
      * after UL failure */

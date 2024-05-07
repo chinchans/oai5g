@@ -42,7 +42,12 @@
 /* Handlers matrix. Only f1 related procedure present here */
 static const f1ap_message_processing_t f1ap_messages_processing[][3] = {
 
-    {0, 0, 0}, /* Reset */
+    // TODO: 
+    // How to handle both CU/DU implementation for RESET?
+    // Use two separate tables for CU/DU?
+    {DU_handle_RESET, CU_handle_RESET_ACKNOWLEDGE, 0}, /* Reset */ 
+    // {CU_handle_RESET, DU_handle_RESET_ACKNOWLEDGE, 0}, /* Reset */ 
+
     {CU_handle_F1_SETUP_REQUEST, DU_handle_F1_SETUP_RESPONSE, DU_handle_F1_SETUP_FAILURE}, /* F1Setup */
     {0, 0, 0}, /* ErrorIndication */
     {CU_handle_gNB_DU_CONFIGURATION_UPDATE, 0, 0}, /* gNBDUConfigurationUpdate */
