@@ -10,3 +10,8 @@ if(ENABLE_WEBSRV)
 endif()
 
 add_subdirectory(T)
+add_subdirectory(LOG)
+add_library(system system.c)
+target_include_directories(system PUBLIC .)
+target_link_libraries(system PRIVATE ${T_LIB})
+add_subdirectory(threadPool)
