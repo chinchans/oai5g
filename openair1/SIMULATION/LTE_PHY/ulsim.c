@@ -447,7 +447,7 @@ int main(int argc, char **argv) {
   int option_index;
   int res;
 
-  while ((res=getopt_long_only(argc, argv, "", long_options, &option_index)) == 0) {
+  while ((res=getopt_long_only(argc, argv, "", long_options, &option_index)) >= 0) {
     if (options[option_index].voidptr != NULL ) {
       if (long_options[option_index].has_arg==no_argument)
         *(bool *)options[option_index].iptr=1;
