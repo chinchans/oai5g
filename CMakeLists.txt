@@ -284,6 +284,7 @@ add_boolean_option(DEBUG_ASN1 False "Enable ASN1 debug logs" OFF)
 # see common/utils/config.h
 add_boolean_option(TRACE_ASN1C_ENC_DEC OFF "Enable ASN1 encoder/decoder debug traces via OAI logging system" ON)
 add_boolean_option(T_TRACER            True  "Activate the T tracer, a debugging/monitoring framework" ON)
+add_boolean_option(ENABLE_LTTNG        False "Activate the LTTNG tracer, a debugging/monitoring framework" ON)
 add_boolean_option(UE_AUTOTEST_TRACE   False "Activate UE autotest specific logs" ON)
 add_boolean_option(UE_DEBUG_TRACE      False "Activate UE debug trace" ON)
 add_boolean_option(UE_TIMING_TRACE     False "Activate UE timing trace" ON)
@@ -659,8 +660,15 @@ add_library(UTIL
   ${OPENAIR_DIR}/common/utils/time_meas.c
   ${OPENAIR_DIR}/common/utils/time_stat.c
 )
-target_link_libraries(UTIL PUBLIC ${T_LIB} pthread)
+if (ENABLE_LTTNG)
+  find_package(LTTngUST REQUIRED)
+  target_sources(UTIL PRIVATE common/utils/LOG/lttng-tp.c)
+  target_link_libraries(UTIL PUBLIC lttng-ust)
+else()
+  message(STATUS "LTTNG support disabled")
+endif()
 
+target_link_libraries(UTIL PUBLIC ${T_LIB} pthread)
 set(SECURITY_SRC
   ${OPENAIR3_DIR}/SECU/secu_defs.c
   ${OPENAIR3_DIR}/SECU/kdf.c
@@ -2046,7 +2054,6 @@ target_link_libraries(lte-uesoftmodem PRIVATE
 target_link_libraries(lte-uesoftmodem PRIVATE pthread m CONFIG_LIB rt sctp)
 target_link_libraries(lte-uesoftmodem PRIVATE ${T_LIB})
 target_link_libraries(lte-uesoftmodem PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
-
 # force the generation of ASN.1 so that we don't need to wait during the build
 target_link_libraries(lte-uesoftmodem PRIVATE
                       asn1_lte_rrc asn1_s1ap asn1_m2ap asn1_m3ap asn1_x2ap)
