@@ -680,9 +680,19 @@ static void nr_rrc_ue_prepare_RRCSetupRequest(NR_UE_RRC_INST_t *rrc)
     rv[i] = taus() & 0xff;
 #endif
   }
-
+  nr_ue_nas_t *nas = get_ue_nas_info(rrc->ue_id);
+  uint64_t fiveG_S_TMSI_part1 = 0;
+  if (nas && nas->guti) {
+    Guti5GSMobileIdentity_t *guti = nas->guti;
+    LOG_D(NR_RRC, "5G-GUTI: AMF pointer %u, AMF Set ID %u, 5G-TMSI %u \n", guti->amfpointer, guti->amfsetid, guti->tmsi);
+    uint64_t fiveG_STMSI = ((uint64_t)guti->amfsetid << 38) | ((uint64_t)guti->amfpointer << 32) | guti->tmsi;
+    /* ng-5G-S-TMSI-Part1: the rightmost 39 bits of 5G-S-TMSI
+     * BIT STRING (SIZE (39)) - 3GPP TS 38.331 */
+    fiveG_S_TMSI_part1 = fiveG_STMSI & ((1ULL << 39) - 1);
+    LOG_D(NR_RRC, "5G-S-TMSI: %lu, 5G-S-TMSI-Part1 %ld\n", fiveG_STMSI, fiveG_S_TMSI_part1);
+  }
   uint8_t buf[1024];
-  int len = do_RRCSetupRequest(buf, sizeof(buf), rv);
+  int len = do_RRCSetupRequest(buf, sizeof(buf), rv, fiveG_S_TMSI_part1);
 
   nr_rlc_srb_recv_sdu(rrc->ue_id, 0, buf, len);
 }
