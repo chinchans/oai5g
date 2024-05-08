@@ -1308,7 +1308,6 @@ void RCconfig_nr_macrlc(configmodule_interface_t *cfg)
       } else if(strcmp(*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_S_PREFERENCE_IDX].strptr), "aerial") == 0){
 #ifdef ENABLE_AERIAL
 	// we are abusing slightly the struture as we are not really using ethernet transport in this case
-	RC.nrmac[j]->eth_params_s.transp_preference = FAPI_AERIAL;
 	RC.nrmac[j]->eth_params_s.local_if_name = strdup(*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_S_SHM_PREFIX].strptr));
         printf("Configuring VNF for Aerial connection with prefix %s\n",RC.nrmac[j]->eth_params_s.local_if_name);
         aerial_configure_nr_fapi_vnf();
