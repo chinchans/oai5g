@@ -380,6 +380,7 @@ typedef struct cucp_cuup_if_s {
 typedef struct nr_rrc_du_ho_info_s {
   bool location_ho_timer_active;
   int location_ho_timer;
+  sctp_assoc_t target_assoc_id;
 } nr_rrc_du_ho_info_t;
 
 typedef struct nr_rrc_du_container_t {
@@ -418,6 +419,7 @@ typedef struct gNB_RRC_INST_s {
 
   // RRC configuration
   gNB_RrcConfigurationReq configuration;
+  f1ap_drb_to_be_setup_t drbs[32];
 
   // gNB N3 GTPU instance
   instance_t e1_inst;
