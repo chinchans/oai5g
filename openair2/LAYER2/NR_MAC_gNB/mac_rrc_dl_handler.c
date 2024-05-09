@@ -723,6 +723,18 @@ void dl_rrc_message_transfer(const f1ap_dl_rrc_message_t *dl_rrc)
     configure_UE_BWP(mac, scc, sched_ctrl, NULL, UE, -1, -1);
 
     nr_mac_prepare_cellgroup_update(mac, UE, oldUE->CellGroup);
+
+    /* Fill the QoS config in MAC for each active DRB from the old UE */
+    for (int lcid_idx = 0; lcid_idx < NR_MAX_NUM_LCID - 4; lcid_idx++) {
+      for (int qfi_idx = 0; qfi_idx < NR_MAX_NUM_QFI; qfi_idx++) {
+        sched_ctrl->qos_config[lcid_idx][qfi_idx] = oldUE->UE_sched_ctrl.qos_config[lcid_idx][qfi_idx];
+      }
+    }
+    /* Set NSSAI config in MAC for each active DRB from the old UE */
+    for (int lcid_idx = 0; lcid_idx < NR_MAX_NUM_LCID; lcid_idx++) {
+      sched_ctrl->dl_lc_nssai[lcid_idx] = oldUE->UE_sched_ctrl.dl_lc_nssai[lcid_idx];
+    }
+
     oldUE->CellGroup = NULL;
     mac_remove_nr_ue(mac, *dl_rrc->old_gNB_DU_ue_id);
     pthread_mutex_unlock(&mac->sched_lock);
