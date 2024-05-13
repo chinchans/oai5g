@@ -266,73 +266,6 @@ nfapi_nr_pm_list_t init_DL_MIMO_codebook(gNB_MAC_INST *gNB, nr_pdsch_AntennaPort
   return mat;
 }
 
-static void process_rlcBearerConfig(struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list,
-                                    struct NR_CellGroupConfig__rlc_BearerToReleaseList *rlc_bearer2release_list,
-                                    NR_UE_sched_ctrl_t *sched_ctrl)
-{
-  if (rlc_bearer2release_list) {
-    for (int i = 0; i < rlc_bearer2release_list->list.count; i++) {
-      for (int idx = 0; idx < sched_ctrl->dl_lc_num; idx++) {
-        if (sched_ctrl->dl_lc_ids[idx] == *rlc_bearer2release_list->list.array[i]) {
-          const int remaining_lcs = sched_ctrl->dl_lc_num - idx - 1;
-          memmove(&sched_ctrl->dl_lc_ids[idx], &sched_ctrl->dl_lc_ids[idx + 1], sizeof(sched_ctrl->dl_lc_ids[idx]) * remaining_lcs);
-          sched_ctrl->dl_lc_num--;
-          break;
-        }
-      }
-    }
-  }
-
-  if (rlc_bearer2add_list) {
-    // keep lcids
-    for (int i = 0; i < rlc_bearer2add_list->list.count; i++) {
-      const int lcid = rlc_bearer2add_list->list.array[i]->logicalChannelIdentity;
-      bool found = false;
-      for (int idx = 0; idx < sched_ctrl->dl_lc_num; idx++) {
-        if (sched_ctrl->dl_lc_ids[idx] == lcid) {
-          found = true;
-          break;
-        }
-      }
-
-      if (!found) {
-        sched_ctrl->dl_lc_num++;
-        sched_ctrl->dl_lc_ids[sched_ctrl->dl_lc_num - 1] = lcid;
-        LOG_D(NR_MAC, "Adding LCID %d (%s %d)\n", lcid, lcid < 4 ? "SRB" : "DRB", lcid);
-      }
-    }
-  }
-
-  LOG_D(NR_MAC, "In %s: total num of active bearers %d) \n",
-      __FUNCTION__,
-      sched_ctrl->dl_lc_num);
-
-}
-
-void process_CellGroup(NR_CellGroupConfig_t *CellGroup, NR_UE_info_t *UE)
-{
-  /* we assume that this function is mutex-protected from outside */
-  NR_SCHED_ENSURE_LOCKED(&RC.nrmac[0]->sched_lock);
-
-   AssertFatal(CellGroup, "CellGroup is null\n");
-   NR_MAC_CellGroupConfig_t *mac_CellGroupConfig = CellGroup->mac_CellGroupConfig;
-
-   if (mac_CellGroupConfig) {
-     //process_drx_Config(sched_ctrl,mac_CellGroupConfig->drx_Config);
-     //process_schedulingRequestConfig(sched_ctrl,mac_CellGroupConfig->schedulingRequestConfig);
-     //process_bsrConfig(sched_ctrl,mac_CellGroupConfig->bsr_Config);
-     //process_tag_Config(sched_ctrl,mac_CellGroupConfig->tag_Config);
-     //process_phr_Config(sched_ctrl,mac_CellGroupConfig->phr_Config);
-   }
-
-   if (CellGroup->spCellConfig && CellGroup->spCellConfig->reconfigurationWithSync
-       && CellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated
-       && CellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra) {
-    nr_mac_prepare_ra_ue(RC.nrmac[0], UE->rnti, CellGroup);
-   }
-   process_rlcBearerConfig(CellGroup->rlc_BearerToAddModList, CellGroup->rlc_BearerToReleaseList, &UE->UE_sched_ctrl);
-}
-
 static void config_common(gNB_MAC_INST *nrmac, nr_pdsch_AntennaPorts_t pdsch_AntennaPorts, int pusch_AntennaPorts, NR_ServingCellConfigCommon_t *scc)
 {
   nfapi_nr_config_request_scf_t *cfg = &nrmac->config[0];
@@ -757,15 +690,24 @@ bool nr_mac_add_test_ue(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupConfig_t
   DevAssert(get_softmodem_params()->phy_test);
   NR_SCHED_LOCK(&nrmac->sched_lock);
 
-  NR_UE_info_t* UE = add_new_nr_ue(nrmac, rnti, CellGroup);
-  if (UE) {
-    LOG_I(NR_MAC,"Force-added new UE %x with initial CellGroup\n", rnti);
-    process_CellGroup(CellGroup, UE);
-  } else {
-    LOG_E(NR_MAC,"Error adding UE %04x\n", rnti);
+  NR_UE_info_t *UE = add_new_nr_ue(nrmac, rnti, CellGroup);
+  if (!UE) {
+    LOG_E(NR_MAC, "Error adding UE %04x\n", rnti);
+    NR_SCHED_UNLOCK(&nrmac->sched_lock);
+    return false;
   }
+
+  if (CellGroup->spCellConfig && CellGroup->spCellConfig->reconfigurationWithSync
+      && CellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated
+      && CellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra) {
+    nr_mac_prepare_ra_ue(RC.nrmac[0], UE->rnti, CellGroup);
+  }
+  /* add a single LCID for data */
+  nr_lc_config_t c = {.lcid = DL_SCH_LCID_DTCH};
+  seq_arr_push_back(&UE->UE_sched_ctrl.lc_config, &c, sizeof(c));
   NR_SCHED_UNLOCK(&nrmac->sched_lock);
-  return UE != NULL;
+  LOG_I(NR_MAC, "Added new UE %x with initial CellGroup\n", rnti);
+  return true;
 }
 
 bool nr_mac_prepare_ra_ue(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupConfig_t *CellGroup)
@@ -823,7 +765,6 @@ bool nr_mac_prepare_cellgroup_update(gNB_MAC_INST *nrmac, NR_UE_info_t *UE, NR_C
   /* we assume that this function is mutex-protected from outside */
   NR_SCHED_ENSURE_LOCKED(&nrmac->sched_lock);
 
-  process_CellGroup(CellGroup, UE);
   UE->reconfigCellGroup = CellGroup;
   UE->expect_reconfiguration = true;
 
