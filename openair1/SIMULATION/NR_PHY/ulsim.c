@@ -223,7 +223,7 @@ int main(int argc, char *argv[])
   /* initialize the sin-cos table */
   InitSinLUT();
 
-  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:i:k:m:n:op:q:r:s:t:u:v:w:y:z:C:F:G:H:I:M:N:PR:S:T:U:L:ZW:E:X:")) != -1) {
+  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:i:k:m:n:op:q:r:s:t:u:v:w:y:z:C:F:G:H:I:M:N:PR:S:T:U:L:ZW:E:X:-:")) != -1) {
     printf("handling optarg %c\n",c);
     switch (c) {
 
@@ -476,6 +476,9 @@ int main(int argc, char *argv[])
         printf("Invalid SRS option. SRS disabled.\n");
         do_SRS = 0;
       }
+      break;
+
+    case '-':
       break;
 
     default:

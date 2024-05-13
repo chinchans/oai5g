@@ -611,6 +611,8 @@ int main(int argc, char **argv) {
   snr0 = 0;
   //  num_layers = 1;
   perfect_ce = 0;
+  AssertFatal((uniqCfg = load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY)) != NULL,
+              "Cannot load configuration module, exiting\n");
   static paramdef_t options[] = {
     { "awgn", "Use AWGN channel and not multipath", PARAMFLAG_BOOL, .iptr=&awgn_flag, .defintval=0, TYPE_INT, 0, NULL, NULL },
     { "Abstx", "Turns on calibration mode for abstraction.", PARAMFLAG_BOOL, .iptr=&abstx,  .defintval=0, TYPE_INT, 0 },
@@ -662,7 +664,7 @@ int main(int argc, char **argv) {
   int option_index;
   int res;
 
-  while ((res=getopt_long_only(argc, argv, "", long_options, &option_index)) == 0) {
+  while ((res=getopt_long_only(argc, argv, "", long_options, &option_index)) >= 0) {
     if (options[option_index].voidptr != NULL ) {
       if (long_options[option_index].has_arg==no_argument)
         *(bool *)options[option_index].iptr=1;
@@ -877,8 +879,6 @@ int main(int argc, char **argv) {
   if (transmission_mode>1) pa=dBm3;
 
   printf("dlsim: tmode %d, pa %d\n",transmission_mode,pa);
-  AssertFatal((uniqCfg = load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY)) != NULL,
-              "Cannot load configuration module, exiting\n");
   logInit();
   set_glog_onlinelog(true);
   // enable these lines if you need debug info

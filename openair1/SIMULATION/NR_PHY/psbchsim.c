@@ -313,7 +313,7 @@ int main(int argc, char **argv)
 
   randominit(0);
 
-  while ((c = getopt(argc, argv, "c:hn:o:s:FIL:N:R:S:T:")) != -1) {
+  while ((c = getopt(argc, argv, "c:hn:o:s:FIL:N:R:S:T:-:")) != -1) {
     printf("SIDELINK PSBCH SIM: handling optarg %c\n", c);
     switch (c) {
       case 'c':
@@ -406,6 +406,9 @@ int main(int argc, char **argv)
         frame = atoi(optarg);
         slot = atoi(argv[optind]);
         printf("PSBCH SIM: frame timing- %d:%d\n", frame, slot);
+        break;
+
+      case '-':
         break;
 
       case 'h':

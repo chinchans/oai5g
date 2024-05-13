@@ -320,7 +320,13 @@ configmodule_interface_t *load_configmodule(int argc,
 
     cfgptr->rtflags = cfgptr->rtflags | tmpflags;
     cfgptr->argc   = argc;
-    cfgptr->argv   = argv;
+    /* copy argv in order to mitigate alterations to argv */
+    cfgptr->argv   = calloc(argc,sizeof(char *));
+    for(int i=0; i<argc; i++){
+      size_t len = strlen(argv[i]);
+      cfgptr->argv[i] = calloc(len+1,sizeof(char));
+      strncpy(cfgptr->argv[i],argv[i],len);
+    }
     cfgptr->cfgmode=strdup(cfgmode);
     cfgptr->num_cfgP=0;
     atoken=strtok_r(modeparams,":",&strtokctx);
@@ -429,6 +435,13 @@ void end_configmodule(configmodule_interface_t *cfgptr)
 
     if (cfgptr->argv_info)
       free(cfgptr->argv_info);
+
+    if (cfgptr->argv) {
+      for(int i=0; i<cfgptr->argc; i++)
+        if (cfgptr->argv[i])
+          free(cfgptr->argv[i]);
+      free(cfgptr->argv);
+    }
 
     free(cfgptr);
   }

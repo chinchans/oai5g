@@ -146,7 +146,7 @@ int main(int argc, char **argv)
   // logInit();
   randominit(0);
 
-  while ((c = getopt(argc, argv, "df:hpVg:i:j:n:l:m:r:s:S:y:z:M:N:F:R:P:L:X:")) != -1) {
+  while ((c = getopt(argc, argv, "df:hpVg:i:j:n:l:m:r:s:S:y:z:M:N:F:R:P:L:X:-:")) != -1) {
     switch (c) {
 		/*case 'f':
 			write_output_file = 1;
@@ -308,6 +308,9 @@ int main(int argc, char **argv)
 		  strncpy(gNBthreads, optarg, sizeof(gNBthreads)-1);
 		  gNBthreads[sizeof(gNBthreads)-1]=0;
 		  break;
+
+                case '-':
+                  break;
 
 
 		default:

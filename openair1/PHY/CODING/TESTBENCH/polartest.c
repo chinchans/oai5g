@@ -32,7 +32,12 @@ int main(int argc, char *argv[])
   uint8_t aggregation_level = 8, decoderListSize = 8, logFlag = 0;
   uint16_t rnti=0;
 
-  while ((arguments = getopt (argc, argv, "s:d:f:m:i:l:a:p:hqgFL:k:")) != -1) {
+  if ((uniqCfg = load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY)) == 0) {
+    exit_fun("[POLARTEST] Error, configuration module init failed\n");
+  }
+  logInit();
+
+  while ((arguments = getopt (argc, argv, "s:d:f:m:i:l:a:p:hqgFL:k:-:")) != -1) {
     switch (arguments) {
     case 's':
     	SNRstart = atof(optarg);
@@ -91,6 +96,9 @@ int main(int argc, char *argv[])
     		exit(-1);
     	}
     	break;
+
+    case '-':
+        break;
 
     case 'h':
       printf("./polartest\nOptions\n-h Print this help\n-s SNRstart (dB)\n-d SNRinc (dB)\n-f SNRstop (dB)\n-m [0=PBCH|1=DCI|2=UCI]\n"

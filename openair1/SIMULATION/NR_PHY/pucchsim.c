@@ -155,7 +155,7 @@ int main(int argc, char **argv)
   randominit(0);
   logInit();
 
-  while ((c = getopt (argc, argv, "f:hA:f:g:i:I:P:B:b:t:T:m:n:r:o:s:S:x:y:z:N:F:GR:IL:q:cd:")) != -1) {
+  while ((c = getopt (argc, argv, "f:hA:f:g:i:I:P:B:b:t:T:m:n:r:o:s:S:x:y:z:N:F:GR:IL:q:cd:-:")) != -1) {
     switch (c) {
     case 'f':
       //write_output_file=1;
@@ -343,6 +343,8 @@ int main(int argc, char **argv)
     case 'T':
       //nacktoack_flag=(uint8_t)atoi(optarg);
       target_error_rate=0.001;
+      break;
+    case '-':
       break;
     default:
     case 'h':
