@@ -26,7 +26,12 @@ int main(int argc, char *argv[])
   int8_t channelOutput_int8[NR_SMALL_BLOCK_CODED_BITS];
   unsigned char qbits = 8;
 
-  while ((arguments = getopt(argc, argv, "s:d:f:l:i:mhg")) != -1)
+  if ((uniqCfg = load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY)) == 0) {
+    exit_fun("[SMALLBLOCKTEST] Error, configuration module init failed\n");
+  }
+  logInit();
+
+  while ((arguments = getopt(argc, argv, "s:d:f:l:i:mhg-:")) != -1)
     switch (arguments) {
       case 's':
         SNRstart = atof(optarg);
@@ -58,6 +63,9 @@ int main(int argc, char *argv[])
         SNRstart = -6.0;
         SNRstop = -6.0;
         messageLength = 11;
+        break;
+
+      case '-':
         break;
 
       case 'h':
