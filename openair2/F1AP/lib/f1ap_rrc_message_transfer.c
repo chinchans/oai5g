@@ -305,7 +305,7 @@ bool decode_dl_rrc_message_transfer(const F1AP_F1AP_PDU_t *pdu, f1ap_dl_rrc_mess
   if (ie) {
     out->execute_duplication = ie->value.choice.ExecuteDuplication;
   }
-  // issue in here
+
   /* mandatory */
   /* RRC Container */
   F1AP_LIB_FIND_IE(F1AP_DLRRCMessageTransferIEs_t, ie, container, F1AP_ProtocolIE_ID_id_RRCContainer, true);
