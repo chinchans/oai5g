@@ -555,6 +555,76 @@ void schedule_nr_MsgA_pusch(module_id_t module_idP, frame_t frameP, sub_frame_t 
   UL_tti_req->n_pdus += 1;
 }
 
+int nr_fill_successrar(const NR_UE_sched_ctrl_t *ue_sched_ctl,
+                       unsigned char *mac_pdu,
+                       rnti_t crnti,
+                       int mac_pdu_length,
+                       const unsigned char *ue_cont_res_id,
+                       uint8_t resource_indicator,
+                       uint8_t timing_indicator)
+{
+  LOG_D(NR_MAC, "mac_pdu_length = %d\n", mac_pdu_length);
+  int timing_advance_cmd = ue_sched_ctl->ta_update;
+  // TS 38.321 - Figure 6.1.5a-1: BI MAC subheader
+  NR_RA_HEADER_BI_MSGB *bi = (NR_RA_HEADER_BI_MSGB *)&mac_pdu[mac_pdu_length];
+  mac_pdu_length += sizeof(NR_RA_HEADER_BI_MSGB);
+
+  bi->E = 1;
+  bi->T1 = 0;
+  bi->T2 = 0;
+  bi->R = 0;
+  bi->BI = 0; // BI = 0, 5ms
+
+  // TS 38.321 - Figure 6.1.5a-3: SuccessRAR MAC subheader
+  NR_RA_HEADER_SUCESS_RAR_MSGB *SUCESS_RAR_header = (NR_RA_HEADER_SUCESS_RAR_MSGB *)&mac_pdu[mac_pdu_length];
+  mac_pdu_length += sizeof(NR_RA_HEADER_SUCESS_RAR_MSGB);
+
+  SUCESS_RAR_header->E = 0;
+  SUCESS_RAR_header->T1 = 0;
+  SUCESS_RAR_header->T2 = 1;
+  SUCESS_RAR_header->S = 0;
+  SUCESS_RAR_header->R = 0;
+
+  // TS 38.321 - Figure 6.2.3a-2: successRAR
+  NR_MAC_SUCESS_RAR *successRAR = (NR_MAC_SUCESS_RAR *)&mac_pdu[mac_pdu_length];
+  mac_pdu_length += sizeof(NR_MAC_SUCESS_RAR);
+
+  successRAR->CONT_RES_1 = ue_cont_res_id[0];
+  successRAR->CONT_RES_2 = ue_cont_res_id[1];
+  successRAR->CONT_RES_3 = ue_cont_res_id[2];
+  successRAR->CONT_RES_4 = ue_cont_res_id[3];
+  successRAR->CONT_RES_5 = ue_cont_res_id[4];
+  successRAR->CONT_RES_6 = ue_cont_res_id[5];
+  successRAR->R = 0;
+  successRAR->CH_ACESS_CPEXT = 1;
+  successRAR->TPC = ue_sched_ctl->tpc0;
+  successRAR->HARQ_FTI = timing_indicator;
+  successRAR->PUCCH_RI = resource_indicator;
+  successRAR->TA1 = (uint8_t)(timing_advance_cmd >> 8); // 4 MSBs of timing advance;
+  successRAR->TA2 = (uint8_t)(timing_advance_cmd & 0xff); // 8 LSBs of timing advance;
+  successRAR->CRNTI_1 = (uint8_t)(crnti >> 8); // 8 MSBs of rnti
+  successRAR->CRNTI_2 = (uint8_t)(crnti & 0xff); // 8 LSBs of rnti
+
+  LOG_D(NR_MAC,
+        "successRAR: Contention Resolution ID 0x%02x%02x%02x%02x%02x%02x R 0x%01x CH_ACESS_CPEXT 0x%02x TPC 0x%02x HARQ_FTI 0x%03x "
+        "PUCCH_RI 0x%04x TA 0x%012x CRNTI 0x%04x\n",
+        successRAR->CONT_RES_1,
+        successRAR->CONT_RES_2,
+        successRAR->CONT_RES_3,
+        successRAR->CONT_RES_4,
+        successRAR->CONT_RES_5,
+        successRAR->CONT_RES_6,
+        successRAR->R,
+        successRAR->CH_ACESS_CPEXT,
+        successRAR->TPC,
+        successRAR->HARQ_FTI,
+        successRAR->PUCCH_RI,
+        timing_advance_cmd,
+        crnti);
+  LOG_D(NR_MAC, "mac_pdu_length = %d\n", mac_pdu_length);
+  return mac_pdu_length;
+}
+
 static bool ra_contains_preamble(const NR_RA_t *ra, uint16_t preamble_index)
 {
   for (int j = 0; j < ra->preambles.num_preambles; j++) {
@@ -2025,9 +2095,28 @@ static void nr_generate_Msg4_MsgB(module_id_t module_idP,
     uint8_t *buf = (uint8_t *) harq->transportBlock;
     // Bytes to be transmitted
     if (harq->round == 0) {
-      // UE Contention Resolution Identity MAC CE
-      uint16_t mac_pdu_length = nr_write_ce_dlsch_pdu(module_idP, nr_mac->sched_ctrlCommon, buf, 255, ra->cont_res_id);
-      LOG_D(NR_MAC,"Encoded contention resolution mac_pdu_length %d\n",mac_pdu_length);
+      uint16_t mac_pdu_length = 0;
+      if (ra->ra_type == RA_4_STEP) {
+        // UE Contention Resolution Identity MAC CE
+        mac_pdu_length = nr_write_ce_dlsch_pdu(module_idP, nr_mac->sched_ctrlCommon, buf, 255, ra->cont_res_id);
+        LOG_D(NR_MAC, "Encoded contention resolution mac_pdu_length %d\n", mac_pdu_length);
+      } else if (ra->ra_type == RA_2_STEP) {
+        // successRAR
+        LOG_D(NR_MAC,
+              "pucch_ResourceCommon = %ld\n",
+              *scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->pucch_ResourceCommon);
+
+        mac_pdu_length = nr_fill_successrar(nr_mac->sched_ctrlCommon,
+                                            buf,
+                                            ra->rnti,
+                                            mac_pdu_length,
+                                            ra->cont_res_id,
+                                            pucch->resource_indicator,
+                                            pucch->timing_indicator);
+      } else {
+        AssertFatal(false, "RA type %d not implemented!\n", ra->ra_type);
+      }
+
       uint8_t buffer[CCCH_SDU_SIZE];
       uint8_t mac_subheader_len = sizeof(NR_MAC_SUBHEADER_SHORT);
       // Get RLC data on the SRB (RRCSetup, RRCReestablishment)
@@ -2060,9 +2149,20 @@ static void nr_generate_Msg4_MsgB(module_id_t module_idP,
       memcpy(&buf[mac_pdu_length + mac_subheader_len], buffer, mac_sdu_length);
     }
 
+    rnti_t rnti = ra->ra_type == RA_4_STEP ? ra->rnti : ra->MsgB_rnti;
+
     const int pduindex = nr_mac->pdu_index[CC_id]++;
     prepare_dl_pdus(nr_mac, ra, dl_bwp, dl_req, pucch, dmrs_info, msg4_tda, aggregation_level, CCEIndex, tb_size, harq->ndi, sched_ctrl->tpc1, delta_PRI,
-                    current_harq_pid, time_domain_assignment, CC_id, ra->rnti, harq->round, mcsIndex, tb_scaling, pduindex, rbStart, rbSize);
+                    current_harq_pid,
+                    time_domain_assignment,
+                    CC_id,
+                    rnti,
+                    harq->round,
+                    mcsIndex,
+                    tb_scaling,
+                    pduindex,
+                    rbStart,
+                    rbSize);
 
     // Add padding header and zero rest out if there is space left
     if (ra->mac_pdu_length < harq->tb_size) {

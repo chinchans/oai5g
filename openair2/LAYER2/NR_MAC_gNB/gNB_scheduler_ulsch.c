@@ -854,9 +854,15 @@ static void _nr_rx_sdu(const module_id_t gnb_mod_idP,
         // the function is only called to decode the contention resolution sub-header
         nr_process_mac_pdu(gnb_mod_idP, UE, CC_idP, frameP, slotP, sduP, sdu_lenP, -1);
 
-        LOG_I(NR_MAC, "Activating scheduling RA-Msg4 for TC_RNTI 0x%04x (state %s)\n", ra->rnti, nrra_text[ra->ra_state]);
-        ra->ra_state = nrRA_Msg4;
-        return;
+        if (ra->ra_type == RA_2_STEP) {
+          LOG_I(NR_MAC, "Activating scheduling RA-MsgB for TC_RNTI 0x%04x (state %s)\n", ra->rnti, nrra_text[ra->ra_state]);
+          ra->ra_state = nrRA_MsgB;
+          return;
+        } else {
+          LOG_I(NR_MAC, "Activating scheduling RA-Msg4 for TC_RNTI 0x%04x (state %s)\n", ra->rnti, nrra_text[ra->ra_state]);
+          ra->ra_state = nrRA_Msg4;
+          return;
+        }
       }
     }
   } else {
