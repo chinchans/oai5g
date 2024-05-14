@@ -2227,7 +2227,9 @@ static void nr_check_Msg4_MsgB_Ack(module_id_t module_id, int CC_id, frame_t fra
     if (harq->round == 0) {
       if (UE->Msg4_MsgB_ACKed) {
         LOG_A(NR_MAC,
-              "(UE RNTI 0x%04x) Received Ack of %s. CBRA procedure succeeded!\n",
+              "%4d.%2d UE %04x: Received Ack of %s. CBRA procedure succeeded!\n",
+              frame,
+              slot,
               ra->rnti,
               ra->ra_type == RA_2_STEP ? "MsgB" : "Msg4");
       } else {
@@ -2251,9 +2253,12 @@ static void nr_check_Msg4_MsgB_Ack(module_id_t module_id, int CC_id, frame_t fra
       if (sched_ctrl->retrans_dl_harq.head >= 0) {
         remove_nr_list(&sched_ctrl->retrans_dl_harq, current_harq_pid);
       }
-    } else {
+    } else if (ra->ra_type == RA_4_STEP) {
       LOG_I(NR_MAC, "(UE %04x) Received Nack of RA-Msg4. Preparing retransmission!\n", ra->rnti);
       ra->ra_state = nrRA_Msg4;
+    } else if (ra->ra_type == RA_2_STEP) {
+      LOG_I(NR_MAC, "(UE %04x) Received Nack of RA-MsgB. Preparing retransmission!\n", ra->rnti);
+      ra->ra_state = nrRA_MsgB;
     }
   }
 }
