@@ -2097,11 +2097,11 @@ void oai_subframe_ind(uint16_t sfn, uint16_t sf) {
 }
 
 #define SLOT_DURATION 300  // in microseconds
-static struct timespec last_execution = {0};
 void handle_nr_slot_ind(uint16_t sfn, uint16_t slot)
 {
     /* uses a usleep to wait for approximately the same time period (300 us) */
-    static struct timespec current_execution;
+    static struct timespec last_execution = {0};
+    struct timespec current_execution;
     clock_gettime(CLOCK_REALTIME, &current_execution);
     // Calculate elapsed time since last execution
     long elapsed_time = (current_execution.tv_sec - last_execution.tv_sec) * 1000000; // Convert seconds to microseconds
