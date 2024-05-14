@@ -253,13 +253,14 @@ typedef enum {
   nrRA_UE_IDLE = 0,
   nrRA_GENERATE_PREAMBLE = 1,
   nrRA_WAIT_RAR = 2,
-  nrRA_WAIT_CONTENTION_RESOLUTION = 3,
-  nrRA_SUCCEEDED = 4,
-  nrRA_FAILED = 5
+  nrRA_WAIT_MSGB = 3,
+  nrRA_WAIT_CONTENTION_RESOLUTION = 4,
+  nrRA_SUCCEEDED = 5,
+  nrRA_FAILED = 6,
 } nrRA_UE_state_t;
 
 static const char *const nrra_ue_text[] =
-    {"UE_IDLE", "GENERATE_PREAMBLE", "WAIT_RAR", "WAIT_CONTENTION_RESOLUTION", "RA_SUCCEEDED", "RA_FAILED"};
+    {"UE_IDLE", "GENERATE_PREAMBLE", "WAIT_RAR", "WAIT_MSGB", "WAIT_CONTENTION_RESOLUTION", "RA_SUCCEEDED", "RA_FAILED"};
 
 typedef struct {
   /// PRACH format retrieved from prach_ConfigIndex
@@ -298,8 +299,10 @@ typedef struct {
   nr_ra_type_t ra_type;
   /// RA rx frame offset: compensate RA rx offset introduced by OAI gNB.
   uint8_t RA_offset;
-  /// RA-rnti
-  uint16_t ra_rnti;
+  /// RA-RNTI
+  rnti_t ra_rnti;
+  /// MsgB-RNTI
+  rnti_t MsgB_rnti;
   /// Temporary CRNTI
   uint16_t t_crnti;
   /// number of attempt for rach
@@ -379,6 +382,22 @@ typedef struct {
   uint8_t Msg3_t_alloc;
   uint16_t Msg3_f_alloc;
 } RAR_grant_t;
+
+typedef struct {
+  uint16_t target_code_rate;
+  uint8_t mod_order;
+  uint8_t freq_hopping;
+  uint8_t mcs;
+  uint8_t n_PRBs;
+  uint8_t dmrs_ports;
+  uint8_t start_symbol_index;
+  uint8_t nr_of_symbols;
+  uint8_t nrOfLayers;
+  uint8_t cdmgrpsnodata;
+  uint8_t dmrs_re_per_rb;
+  uint8_t ra_rnti;
+  uint8_t transform_precoding;
+} MsgA_PUSCH_resource_t;
 
 typedef struct {
   NR_PUCCH_Resource_t *pucch_resource;
