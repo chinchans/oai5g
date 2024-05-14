@@ -2479,9 +2479,9 @@ NR_UE_info_t *add_new_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rntiP, NR_CellGroupConf
   UE->CellGroup = CellGroup;
 
   if (CellGroup)
-    UE->Msg4_ACKed = true;
+    UE->Msg4_MsgB_ACKed = true;
   else
-    UE->Msg4_ACKed = false;
+    UE->Msg4_MsgB_ACKed = false;
 
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
   memset(sched_ctrl, 0, sizeof(*sched_ctrl));

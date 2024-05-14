@@ -190,7 +190,7 @@ typedef struct {
   rnti_t rnti;
   /// RA RNTI allocated from received PRACH
   uint16_t RA_rnti;
-  /// MsgB RNTI allocated from received PRACH
+  /// MsgB RNTI allocated from received MsgB
   uint16_t MsgB_rnti;
   /// Received UE Contention Resolution Identifier
   uint8_t cont_res_id[6];
@@ -696,7 +696,7 @@ typedef struct {
   NR_UE_NR_Capability_t *capability;
   // UE selected beam index
   uint8_t UE_beam_index;
-  bool Msg4_ACKed;
+  bool Msg4_MsgB_ACKed;
   float ul_thr_ue;
   float dl_thr_ue;
   long pdsch_HARQ_ACK_Codebook;

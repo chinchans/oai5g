@@ -1845,8 +1845,8 @@ static void prepare_dl_pdus(gNB_MAC_INST *nr_mac,
   LOG_D(NR_MAC, "numDlDci: %i\n", pdcch_pdu_rel15->numDlDci);
 }
 
-static void nr_generate_Msg4(module_id_t module_idP,
-                             int CC_id,
+static void nr_generate_Msg4_MsgB(module_id_t module_idP,
+                                  int CC_id,
                              frame_t frameP,
                              sub_frame_t slotP,
                              NR_RA_t *ra,
@@ -1857,7 +1857,6 @@ static void nr_generate_Msg4(module_id_t module_idP,
   NR_COMMON_channels_t *cc = &nr_mac->common_channels[CC_id];
   NR_UE_DL_BWP_t *dl_bwp = &ra->DL_BWP;
 
-  AssertFatal(ra->ra_type == RA_4_STEP, "Scheduling of RA 2-Step MsgB not implemented yet!\n");
   // if it is a DL slot, if the RA is in MSG4 state
   if (is_xlsch_in_slot(nr_mac->dlsch_slot_bitmap[slotP / 64], slotP)) {
 
@@ -1865,13 +1864,13 @@ static void nr_generate_Msg4(module_id_t module_idP,
     NR_SearchSpace_t *ss = ra->ra_ss;
 
     NR_ControlResourceSet_t *coreset = ra->coreset;
-    AssertFatal(coreset!=NULL,"Coreset cannot be null for RA-Msg4\n");
+    AssertFatal(coreset != NULL, "Coreset cannot be null for RA %s\n", ra->ra_type == RA_2_STEP ? "MsgB" : "Msg4");
 
     uint16_t mac_sdu_length = 0;
 
     NR_UE_info_t *UE = find_nr_UE(&nr_mac->UE_info, ra->rnti);
     if (!UE) {
-      LOG_E(NR_MAC, "want to generate Msg4, but rnti %04x not in the table\n", ra->rnti);
+      LOG_E(NR_MAC, "want to generate %s, but rnti %04x not in the table\n", ra->ra_type == RA_2_STEP ? "MsgB" : "Msg4", ra->rnti);
       return;
     }
 
@@ -1960,7 +1959,7 @@ static void nr_generate_Msg4(module_id_t module_idP,
     }
     else {
       uint8_t subheader_len = (mac_sdu_length < 256) ? sizeof(NR_MAC_SUBHEADER_SHORT) : sizeof(NR_MAC_SUBHEADER_LONG);
-      pdu_length = mac_sdu_length + subheader_len + 7; //7 is contetion resolution length
+      pdu_length = mac_sdu_length + subheader_len + 13; // 13 is contention resolution length
     }
 
     // increase PRBs until we get to BWPSize or TBS is bigger than MAC PDU size
@@ -1975,7 +1974,7 @@ static void nr_generate_Msg4(module_id_t module_idP,
                                      rbSize, msg4_tda.nrOfSymbols, dmrs_info.N_PRB_DMRS * dmrs_info.N_DMRS_SLOT, 0, tb_scaling,1) >> 3;
     } while (tb_size < pdu_length && mcsIndex<=28);
 
-    AssertFatal(tb_size >= pdu_length,"Cannot allocate Msg4\n");
+    AssertFatal(tb_size >= pdu_length, "Cannot allocate %s\n", ra->ra_type == RA_2_STEP ? "MsgB" : "Msg4");
 
     int i = 0;
     uint16_t *vrb_map = cc[CC_id].vrb_map;
@@ -2100,15 +2099,21 @@ static void nr_generate_Msg4(module_id_t module_idP,
     }
 
     ra->ra_state = nrRA_WAIT_Msg4_MsgB_ACK;
-    LOG_I(NR_MAC,"UE %04x Generate msg4: feedback at %4d.%2d, payload %d bytes, next state WAIT_Msg4_ACK\n", ra->rnti, pucch->frame, pucch->ul_slot, harq->tb_size);
+    LOG_I(NR_MAC,
+          "UE %04x Generate %s: feedback at %4d.%2d, payload %d bytes, next state nrRA_WAIT_Msg4_MsgB_ACK\n",
+          ra->rnti,
+          ra->ra_type == RA_2_STEP ? "MsgB" : "Msg4",
+          pucch->frame,
+          pucch->ul_slot,
+          harq->tb_size);
   }
 }
 
-static void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, sub_frame_t slot, NR_RA_t *ra)
+static void nr_check_Msg4_MsgB_Ack(module_id_t module_id, int CC_id, frame_t frame, sub_frame_t slot, NR_RA_t *ra)
 {
   NR_UE_info_t *UE = find_nr_UE(&RC.nrmac[module_id]->UE_info, ra->rnti);
   if (!UE) {
-    LOG_E(NR_MAC, "Cannot check Msg4 ACK/NACK, rnti %04x not in the table\n", ra->rnti);
+    LOG_E(NR_MAC, "Cannot check %s ACK/NACK, rnti %04x not in the table\n", ra->ra_type == RA_2_STEP ? "MsgB" : "Msg4", ra->rnti);
     return;
   }
   const int current_harq_pid = ra->harq_pid;
@@ -2120,10 +2125,18 @@ static void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, s
 
   if (harq->is_waiting == 0) {
     if (harq->round == 0) {
-      if (UE->Msg4_ACKed) {
-        LOG_A(NR_MAC, "(UE RNTI 0x%04x) Received Ack of RA-Msg4. CBRA procedure succeeded!\n", ra->rnti);
+      if (UE->Msg4_MsgB_ACKed) {
+        LOG_A(NR_MAC,
+              "(UE RNTI 0x%04x) Received Ack of %s. CBRA procedure succeeded!\n",
+              ra->rnti,
+              ra->ra_type == RA_2_STEP ? "MsgB" : "Msg4");
       } else {
-        LOG_I(NR_MAC, "%4d.%2d UE %04x: RA Procedure failed at Msg4!\n", frame, slot, ra->rnti);
+        LOG_I(NR_MAC,
+              "%4d.%2d UE %04x: RA Procedure failed at %s!\n",
+              frame,
+              slot,
+              ra->rnti,
+              ra->ra_type == RA_2_STEP ? "MsgB" : "Msg4");
         nr_mac_trigger_ul_failure(sched_ctrl, UE->current_DL_BWP.scs);
       }
 
@@ -2310,10 +2323,11 @@ void nr_schedule_RA(module_id_t module_idP,
           nr_generate_Msg3_retransmission(module_idP, CC_id, frameP, slotP, ra, ul_dci_req);
           break;
         case nrRA_Msg4:
-          nr_generate_Msg4(module_idP, CC_id, frameP, slotP, ra, DL_req, TX_req);
+        case nrRA_MsgB:
+          nr_generate_Msg4_MsgB(module_idP, CC_id, frameP, slotP, ra, DL_req, TX_req);
           break;
         case nrRA_WAIT_Msg4_MsgB_ACK:
-          nr_check_Msg4_Ack(module_idP, CC_id, frameP, slotP, ra);
+          nr_check_Msg4_MsgB_Ack(module_idP, CC_id, frameP, slotP, ra);
           break;
         default:
           break;
