@@ -644,18 +644,27 @@ void nr_initiate_ra_proc(module_id_t module_idP,
     ra->rnti = trial;
   }
 
-  ra->ra_state = nrRA_Msg2;
   ra->preamble_frame = frameP;
   ra->preamble_slot = slotP;
   ra->preamble_index = preamble_index;
   ra->timing_offset = timing_offset;
   uint8_t ul_carrier_id = 0; // 0 for NUL 1 for SUL
   ra->RA_rnti = nr_get_ra_rnti(symbol, slotP, freq_index, ul_carrier_id);
+
+  NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
+  if (scc->uplinkConfigCommon->initialUplinkBWP->ext1 && scc->uplinkConfigCommon->initialUplinkBWP->ext1->msgA_ConfigCommon_r16) {
+    ra->ra_type = RA_2_STEP;
+    ra->ra_state = nrRA_WAIT_MsgA_PUSCH;
+    ra->MsgB_rnti = nr_get_MsgB_rnti(symbol, slotP, freq_index, ul_carrier_id);
+  } else {
+    ra->ra_type = RA_4_STEP;
+    ra->ra_state = nrRA_Msg2;
+  }
+
   int index = ra - cc->ra;
   LOG_I(NR_MAC, "%d.%d UE RA-RNTI %04x TC-RNTI %04x: Activating RA process index %d\n", frameP, slotP, ra->RA_rnti, ra->rnti, index);
 
   // Configure RA BWP
-  NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
   configure_UE_BWP(nr_mac, scc, NULL, ra, NULL, -1, -1);
 
   uint8_t beam_index = ssb_index_from_prach(module_idP, frameP, slotP, preamble_index, freq_index, symbol);
@@ -1848,6 +1857,7 @@ static void nr_generate_Msg4(module_id_t module_idP,
   NR_COMMON_channels_t *cc = &nr_mac->common_channels[CC_id];
   NR_UE_DL_BWP_t *dl_bwp = &ra->DL_BWP;
 
+  AssertFatal(ra->ra_type == RA_4_STEP, "Scheduling of RA 2-Step MsgB not implemented yet!\n");
   // if it is a DL slot, if the RA is in MSG4 state
   if (is_xlsch_in_slot(nr_mac->dlsch_slot_bitmap[slotP / 64], slotP)) {
 
@@ -2089,7 +2099,7 @@ static void nr_generate_Msg4(module_id_t module_idP,
       vrb_map[BWPStart + rb + rbStart] |= SL_to_bitmap(msg4_tda.startSymbolIndex, msg4_tda.nrOfSymbols);
     }
 
-    ra->ra_state = nrRA_WAIT_Msg4_ACK;
+    ra->ra_state = nrRA_WAIT_Msg4_MsgB_ACK;
     LOG_I(NR_MAC,"UE %04x Generate msg4: feedback at %4d.%2d, payload %d bytes, next state WAIT_Msg4_ACK\n", ra->rnti, pucch->frame, pucch->ul_slot, harq->tb_size);
   }
 }
@@ -2282,7 +2292,7 @@ void nr_schedule_RA(module_id_t module_idP,
       LOG_D(NR_MAC, "RA[state:%d]\n", ra->ra_state);
 
       // Check RA Contention Resolution timer
-      if (ra->ra_state >= nrRA_WAIT_Msg3) {
+      if (ra->ra_type == RA_4_STEP && ra->ra_state >= nrRA_WAIT_Msg3) {
         ra->contention_resolution_timer--;
         if (ra->contention_resolution_timer < 0) {
           LOG_W(NR_MAC, "(%d.%d) RA Contention Resolution timer expired for UE 0x%04x, RA procedure failed...\n", frameP, slotP, ra->rnti);
@@ -2302,7 +2312,7 @@ void nr_schedule_RA(module_id_t module_idP,
         case nrRA_Msg4:
           nr_generate_Msg4(module_idP, CC_id, frameP, slotP, ra, DL_req, TX_req);
           break;
-        case nrRA_WAIT_Msg4_ACK:
+        case nrRA_WAIT_Msg4_MsgB_ACK:
           nr_check_Msg4_Ack(module_idP, CC_id, frameP, slotP, ra);
           break;
         default:
