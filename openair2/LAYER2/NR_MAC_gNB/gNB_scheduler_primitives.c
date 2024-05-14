@@ -3074,8 +3074,9 @@ void UL_tti_req_ahead_initialization(gNB_MAC_INST * gNB, NR_ServingCellConfigCom
     return;
 
   int size = n;
-  if (scs == 0)
-    size <<= 1; // to have enough room for feedback possibly beyond the frame we need a larger array at 15kHz SCS
+  // To have enough room for feedback possibly beyond the frame we need a larger array at 15kHz SCS
+  // For 2-Step RA we need to schedule MsgA PUSCH in advance, usually in the next frame, so, we need also more time in advance
+  size = n << 1;
 
   gNB->UL_tti_req_ahead_size = size;
   gNB->UL_tti_req_ahead[CCid] = calloc(size, sizeof(nfapi_nr_ul_tti_request_t));
