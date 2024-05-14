@@ -667,7 +667,7 @@ void rrc_gNB_generate_dedicatedRRCReconfiguration(const protocol_ctxt_t *const c
 
   NR_CellGroupConfig_t *cellGroupConfig = ue_p->masterCellGroup;
 
-  const nr_rrc_du_container_t *du = get_du_for_ue(rrc, ue_p->rrc_ue_id);
+  nr_rrc_du_container_t *du = get_du_for_ue(rrc, ue_p->rrc_ue_id);
   DevAssert(du != NULL);
   f1ap_served_cell_info_t *cell_info = &du->setup_req->cell[0].info;
   NR_MeasConfig_t *measconfig = NULL;
@@ -712,7 +712,28 @@ void rrc_gNB_generate_dedicatedRRCReconfiguration(const protocol_ctxt_t *const c
         ctxt_pP->module_id,
         DCCH);
 
-  nr_rrc_transfer_protected_rrc_message(rrc, ue_p, DCCH, buffer, size);
+  if (ue_p->StatusRrc == NR_RRC_HO_EXECUTION) {
+    int16_t ho_size = do_NR_HandoverCommand(du->ho_info.ho_buf, RRC_BUF_SIZE, buffer, size);
+    uint8_t transmission_action_indicator = 0;
+    f1_ue_data_t ue_data = cu_get_f1_ue_data(ue_p->rrc_ue_id);
+    RETURN_IF_INVALID_ASSOC_ID(ue_data);
+    f1ap_ue_context_modif_req_t ue_context_modif_req = {
+        .gNB_CU_ue_id = ue_p->rrc_ue_id,
+        .gNB_DU_ue_id = ue_data.secondary_ue,
+        .plmn.mcc = rrc->configuration.mcc[0],
+        .plmn.mnc = rrc->configuration.mnc[0],
+        .plmn.mnc_digit_length = rrc->configuration.mnc_digit_length[0],
+        .nr_cellid = rrc->nr_cellid,
+        .servCellId = 0, // TODO: correct value?
+        .ReconfigComplOutcome = RRCreconf_success,
+        .transmission_action_indicator = &transmission_action_indicator,
+        .rrc_container_length = ho_size,
+        .rrc_container = du->ho_info.ho_buf,
+    };
+    rrc->mac_rrc.ue_context_modification_request(ue_data.du_assoc_id, &ue_context_modif_req);
+  } else {
+    nr_rrc_transfer_protected_rrc_message(rrc, ue_p, DCCH, buffer, size);
+  }
 }
 
 //-----------------------------------------------------------------------------
